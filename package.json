@@ -32,7 +32,11 @@
     "name": "Amazon Web Services",
     "url": "https://aws.amazon.com/"
   },
-  "license": "MIT-0",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aws-samples/amazon-qldb-kvs-nodejs"
+  },
   "keywords": [
     "amazon",
     "aws",
