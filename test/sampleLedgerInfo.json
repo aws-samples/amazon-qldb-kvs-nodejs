@@ -1,0 +1,18 @@
+{
+    "LedgerName": "vehicle-registration",
+    "TableName": "Bomb",
+    "BlockAddress": {
+        "IonText": "{strandId: \"KbW0e2QaN2uBUWzRYGeOCe\", sequenceNo: 21}"
+    },
+    "DocumentId": "6rq58mFpDOw6dUXm4LAdT4",
+    "RevisionHash": "3P2Z7Ex9CvXTyBX7O/TrgicOLcjl1e2e/Wv2zUUrMsc=",
+    "Proof": {
+        "IonText": "[{{MC+5lx76dgGUwdNgQcBGU0T59GuHd/wu8qnn6NSQA9o=}},{{oHDWMPi/noEKVvXTi2s05wOhVVrvKNYpXZJliZ5s1BE=}},{{hYgPb4sqRKtkJbKVrszPL4fR9PSv2y0u+HHQ6g/E5yw=}},{{hYgPb4sqRKtkJbKVrszPL4fR9PSv2y0u+HHQ6g/E5yw=}},{{ro/XdmizxMZ9uc1ZHpTXJfCECd7UA0uEmcz303CmlWs=}},{{dQPDYhY9gUInSgE2Ap8uP3o5pPK6zQHvoW5OomJoaPs=}},{{Eir1146w00ciMGdgujpAVsrO+pws9WgMXA/G34NkM1M=}},{{IPvTDXU7LFl06IdiMUMhBcwx++VlZ4HhJlNrmr2efZY=}},{{+X2GDOYRIycdKoo4D4Td+gWmxWsj/DWGbqat0gMO4pM=}}]"
+    },
+    "LedgerDigest": {
+        "Digest": "KGuCkc79bsDfG9X0RjI7QgR/D4wlOarP/dKYnbnFjDo=",
+        "DigestTipAddress": {
+            "IonText": "{strandId:\"KbW0e2QaN2uBUWzRYGeOCe\",sequenceNo:46}"
+        }
+    }
+}
