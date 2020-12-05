@@ -18,7 +18,7 @@
     "eslint": "^6.6.0",
     "eslint-config-airbnb": "^18.1.0",
     "ts-node": "^8.3.0",
-    "typedoc": "^0.15.0",
+    "typedoc": "^0.19.2",
     "typescript": "^3.5.3",
     "mocha": "8.1.3"
   },
