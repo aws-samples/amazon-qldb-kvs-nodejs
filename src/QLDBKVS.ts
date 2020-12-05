@@ -35,7 +35,7 @@ export class QLDBKVS {
     qldbHelper: QLDBHelper;
     ledgerName: string;
     tableName: string;
-    tableNotExist: boolean | undefined;
+    tableState: string;
 
     /**
      * Initialize QLDBKVS object
@@ -67,9 +67,9 @@ export class QLDBKVS {
                 //// Checking if table is already created and create if not
                 logger.info(`${fcnName} Checking if table with name ${tableName} exists`);
                 if (tableNames.indexOf(tableName.toUpperCase()) < 0) {
-                    this.tableNotExist = true;
+                    this.tableState = "NOT_EXIST";
                 } else {
-                    this.tableNotExist = false;
+                    this.tableState = "EXIST";
                 }
             })();
         } catch (err) {
@@ -163,20 +163,22 @@ export class QLDBKVS {
             logger.debug(`${fcnName} Length of an object is ${documentObjectSize}`);
 
             // In case our table has not been created yet, waiting for it to be created
-            if (this.tableNotExist === undefined) {
+            if (this.tableState === "CREATING") {
                 let cycles = TABLE_CREATION_MAX_WAIT / 100;
                 logger.debug(`${fcnName} Table with name ${tableName} still does not exist, waiting for it to be created.`)
                 do {
                     await CustomUtil.sleep(100);
+                    cycles--;
                     if (cycles === 0) {
                         throw new Error(`Could not create a table with name ${tableName} in ${TABLE_CREATION_MAX_WAIT} milliseconds`)
                     }
-                } while (this.tableNotExist === undefined);
+                } while (this.tableState === "CREATING");
             }
-            if (this.tableNotExist) {
+            if (this.tableState === "NOT_EXIST") {
+                this.tableState = "CREATING"
                 logger.info(`${fcnName} Looks like a table with name ${tableName} doesn't exist. Creating it and re-trying file upload.`)
                 await this.qldbHelper.createTableWithIndex(tableName, KEY_ATTRIBUTE_NAME);
-                this.tableNotExist = false;
+                this.tableState = "EXIST";
             }
             const result: number = await this.qldbHelper.upsertDocumentWithKeyAttribute(tableName, KEY_ATTRIBUTE_NAME, document).catch((err) => {
                 throw err;
@@ -326,21 +328,23 @@ export class QLDBKVS {
             logger.debug(`${fcnName} Setting value of ${paramId} from ledger ${ledgerName} and table ${tableName} as utf8 encoded stringified JSON object.`);
 
             // In case our table has not been created yet, waiting for it to be created
-            if (this.tableNotExist === undefined) {
+            if (this.tableState === "CREATING") {
                 let cycles = TABLE_CREATION_MAX_WAIT / 100;
                 logger.debug(`${fcnName} Table with name ${tableName} still does not exist, waiting for it to be created.`)
                 do {
                     await CustomUtil.sleep(100);
+                    cycles--;
                     if (cycles === 0) {
                         throw new Error(`Could not create a table with name ${tableName} in ${TABLE_CREATION_MAX_WAIT} milliseconds`)
                     }
-                } while (this.tableNotExist === undefined);
+                } while (this.tableState === "CREATING");
             }
 
-            if (this.tableNotExist) {
+            if (this.tableState === "NOT_EXIST") {
+                this.tableState = "CREATING"
                 logger.info(`${fcnName} Looks like a table with name ${tableName} doesn't exist. Creating it and re-trying file upload.`)
                 await this.qldbHelper.createTableWithIndex(tableName, KEY_ATTRIBUTE_NAME);
-                this.tableNotExist = false;
+                this.tableState = "EXIST";
             }
 
             const result: number = await this.qldbHelper.upsertDocumentWithKeyAttribute(tableName, KEY_ATTRIBUTE_NAME, document).catch((err) => {
