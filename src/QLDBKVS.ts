@@ -55,6 +55,7 @@ export class QLDBKVS {
             this.ledgerName = ledgerName;
             this.tableName = tableName;
             this.qldbHelper = new QLDBHelper(ledgerName);
+            this.tableState = "NOT_EXIST";
             // Making sure the table exists and set it for creation 
             // next time somebody will decide to submit a new document to QLDB
             (async () => {
@@ -66,9 +67,7 @@ export class QLDBKVS {
 
                 //// Checking if table is already created and create if not
                 logger.info(`${fcnName} Checking if table with name ${tableName} exists`);
-                if (tableNames.indexOf(tableName.toUpperCase()) < 0) {
-                    this.tableState = "NOT_EXIST";
-                } else {
+                if (tableNames.indexOf(tableName.toUpperCase()) >= 0) {
                     this.tableState = "EXIST";
                 }
             })();
