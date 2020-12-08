@@ -15,7 +15,7 @@
  */
 
 import { TransactionExecutor, Result } from "amazon-qldb-driver-nodejs";
-import { getDocumentIds } from "./Util";
+import { getDocumentIds, validateTableNameConstrains } from "./Util";
 import { dom } from "ion-js";
 import { log } from "./Logging";
 import { ValueHolder } from "aws-sdk/clients/qldbsession";
@@ -37,6 +37,7 @@ export async function getDocumentRevisionByIdAndBlock(txn: TransactionExecutor, 
     try {
         const blockAddressIon: dom.Value = dom.load(blockAddress.IonText);
         const blockSequenceNo = blockAddressIon.get("sequenceNo");
+        validateTableNameConstrains(tableName);
         const query: string = `SELECT * FROM history( ${tableName} ) AS h WHERE h.metadata.id = ? AND h.blockAddress.sequenceNo = ?`;
 
         logger.debug(`${fcnName} Retrieving document values for Id: ${documentId} and Block Sequence Number: ${blockSequenceNo}`);
@@ -75,6 +76,7 @@ export async function getDocumentHistory(txn: TransactionExecutor, tableName: st
         const documentIds = await getDocumentIds(txn, tableName, keyAttributeName, keyAttributeValue);
         documentId = documentIds[0];
 
+        validateTableNameConstrains(tableName);
         const query: string = `SELECT * FROM history( ${tableName} ) AS h WHERE h.metadata.id = ? `;
 
         logger.debug(`${fcnName} Retrieving document history for Id: ${documentId}`);

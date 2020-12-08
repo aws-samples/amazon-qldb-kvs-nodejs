@@ -23,7 +23,7 @@ import { getLedgerDigest } from './GetDigest';
 import { blockAddressToValueHolder, getMetadataId } from './BlockAddress';
 import { log } from "./Logging";
 const logger = log.getLogger("qldb-helper");
-import { getBlobValue, valueHolderToString, Base64EncodedString, sleep } from "./Util";
+import { getBlobValue, valueHolderToString, Base64EncodedString, sleep, validateTableNameConstrains, validateAttributeNameConstrains } from "./Util";
 import { getRevision } from "./GetRevision";
 
 export interface LedgerMetadata {
@@ -58,6 +58,9 @@ export async function lookupBlockAddressAndDocIdForKey(txn: TransactionExecutor,
     try {
         logger.debug(`${fcnName} Querying the '${tableName}' table for key ${keyAttributeName}: ${keyAttributeValue}...`);
         let resultList: dom.Value[];
+
+        validateTableNameConstrains(tableName);
+        validateAttributeNameConstrains(keyAttributeName);
         const query: string = `SELECT blockAddress, metadata.id FROM _ql_committed_${tableName} WHERE data.${keyAttributeName} = ?`;
         logger.debug(`${fcnName} Constructed query: ${query}`);
 

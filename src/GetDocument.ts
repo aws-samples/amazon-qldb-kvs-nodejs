@@ -18,6 +18,7 @@ import { TransactionExecutor, Result } from "amazon-qldb-driver-nodejs";
 import { dom } from "ion-js";
 import { log } from "./Logging";
 import { MAX_KEYS_TO_RETRIEVE } from "./Constants";
+import { validateTableNameConstrains, validateAttributeNameConstrains } from "./Util"
 const logger = log.getLogger("qldb-helper");
 
 /**
@@ -53,6 +54,8 @@ export async function getByKeyAttribute(txn: TransactionExecutor, tableName: str
     const startTime: number = new Date().getTime();
 
     try {
+        validateTableNameConstrains(tableName);
+        validateAttributeNameConstrains(keyAttributeName);
         const query: string = `SELECT * FROM ${tableName} AS d BY id  WHERE d.${keyAttributeName} = ?`;
 
         logger.debug(`${fcnName} Retrieving document values for Key: ${keyAttributeValue}`);
@@ -87,6 +90,9 @@ export async function getByKeyAttributes(txn: TransactionExecutor, tableName: st
     const startTime: number = new Date().getTime();
 
     try {
+
+        validateTableNameConstrains(tableName);
+        validateAttributeNameConstrains(keyAttributeName);
         const query: string = `SELECT * FROM ${tableName} AS d BY id  WHERE d.${keyAttributeName} IN ${getBindParametersString(keyAttributeValues.length)}`;
 
         if (keyAttributeValues.length > MAX_KEYS_TO_RETRIEVE) throw `We should retrieve not more then ${MAX_KEYS_TO_RETRIEVE} keys at a time.`
@@ -122,6 +128,7 @@ export async function getDocumentById(txn: TransactionExecutor, tableName: strin
     const startTime: number = new Date().getTime();
 
     try {
+        validateTableNameConstrains(tableName);
         const query: string = `SELECT * FROM ${tableName} BY id  WHERE id = ?`;
 
         logger.debug(`${fcnName} Retrieving document with Id: ${documentId}`);

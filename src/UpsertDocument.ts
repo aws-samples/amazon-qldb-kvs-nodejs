@@ -15,7 +15,7 @@
  */
 
 import { TransactionExecutor, Result } from "amazon-qldb-driver-nodejs";
-import { getDocumentIds } from "./Util"
+import { getDocumentIds, validateTableNameConstrains } from "./Util"
 import { log } from "./Logging";
 const logger = log.getLogger("qldb-helper");
 
@@ -63,6 +63,7 @@ export async function upsert(txn: TransactionExecutor, tableName: string, keyAtt
             const documentId: string = docIds[0];
             //statement = `UPDATE ${tableName} AS d SET d = ? WHERE d.${keyAttributeName} = ?`;
             // Just to be 100% sure we are updating a right document in deterministic way
+            validateTableNameConstrains(tableName);
             statement = `UPDATE ${tableName} AS d BY id SET d = ? WHERE id = ?`;
             logger.debug(`${fcnName} Executing statement ${statement}`);
             result = await txn.execute(statement, documentJSON, documentId);
@@ -71,6 +72,7 @@ export async function upsert(txn: TransactionExecutor, tableName: string, keyAtt
         // If not exists, insert a new doc
         if (docIds.length == 0) {
             logger.debug(`${fcnName} Document does not exist yet, inserting a new one.`);
+            validateTableNameConstrains(tableName);
             statement = `INSERT INTO ${tableName} ?`;
             logger.debug(`${fcnName} Executing statement ${statement}`);
             result = await txn.execute(statement, documentJSON);

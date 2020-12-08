@@ -21,7 +21,7 @@ const logger = log.getLogger("qldb-helper");
 import { dom } from "ion-js";
 import { getLedgerDigest } from "./GetDigest"
 import { getByKeyAttribute, getByKeyAttributes, getDocumentById } from "./GetDocument"
-import { getDocumentIds } from "./Util"
+import { getDocumentIds, validateTableNameConstrains, validateLedgerNameConstrains, validateAttributeNameConstrains } from "./Util"
 import { upsert } from "./UpsertDocument"
 import { getDocumentLedgerMetadata, LedgerMetadata } from "./GetMetadata"
 import { verifyDocumentMetadataWithUserData } from "./VerifyDocument"
@@ -46,6 +46,7 @@ export class QLDBHelper {
     constructor(ledgerName: string) {
         const fcnName: string = "[QLDBHelper.constructor]";
         try {
+            validateLedgerNameConstrains(ledgerName);
             this.ledgerName = ledgerName;
             logger.debug(`${fcnName} Creating QLDB driver`);
 
@@ -162,11 +163,13 @@ export class QLDBHelper {
                 return this.qldbDriver.executeLambda(async (txn: TransactionExecutor) => {
                     let resultsTotal: number = 0;
 
+                    validateTableNameConstrains(tableName);
                     const statement: string = `CREATE TABLE ${tableName}`;
                     const resultCreateTable: Result = await txn.execute(statement)
                     logger.info(`${fcnName} Successfully created table ${tableName}. Creating index.`);
                     resultsTotal += resultCreateTable.getResultList().length;
 
+                    validateAttributeNameConstrains(keyAttributeName);
                     const createIndexStatement = `CREATE INDEX on ${tableName} (${keyAttributeName})`;
                     const resultCreateIndex: Result = await txn.execute(createIndexStatement)
                     logger.info(`${fcnName} Successfully created index ${keyAttributeName} on table ${tableName}.`);

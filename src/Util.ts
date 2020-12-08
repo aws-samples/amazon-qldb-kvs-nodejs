@@ -89,6 +89,8 @@ export async function getDocumentIds(
     const fcnName: string = "[Util.getDocumentIds]"
     const startTime: number = new Date().getTime();
 
+    validateTableNameConstrains(tableName);
+    validateAttributeNameConstrains(keyAttributeName);
     const query: string = `SELECT id FROM ${tableName} AS t BY id WHERE t.${keyAttributeName} = ?`;
     let documentIds: string[] = [];
 
@@ -146,4 +148,80 @@ export function valueHolderToString(valueHolder: ValueHolder): string {
     const reader: Reader = makeReader(stringBuilder);
     writer.writeValues(reader);
     return decodeUtf8(writer.getBytes());
+}
+
+/**
+ * Checks a string for compliance with table naming constrains: https://docs.aws.amazon.com/qldb/latest/developerguide/limits.html#limits.naming
+ * @param tableName A string containing a name of a table.
+ * @returns Returns true if string complies with table naming constrains and trows an error if otherwise.
+ */
+export function validateTableNameConstrains(tableName: string): boolean {
+    const nameStringRegexTemplate = /^[A-Za-z_][A-Za-z0-9_]{0,127}$/g;
+    const nameStringRegexCheckResult = nameStringRegexTemplate.test(tableName);
+
+    if (!nameStringRegexCheckResult) {
+        throw new Error(`Please check tableName complies with Amazon QLDB table naming constrains: https://docs.aws.amazon.com/qldb/latest/developerguide/limits.html#limits.naming`)
+    }
+
+    const partiQLReservedWords = ["ABSOLUTE", "ACTION", "ADD", "ALL", "ALLOCATE", "ALTER", "AND", "ANY", "ARE", "AS", "ASC", "ASSERTION", "AT", "AUTHORIZATION", "AVG", "BAG", "BEGIN", "BETWEEN", "BIT", "BIT_LENGTH", "BLOB", "BOOL", "BOOLEAN", "BOTH", "BY", "CASCADE", "CASCADED", "CASE", "CAST", "CATALOG", "CHAR", "CHARACTER", "CHARACTER_LENGTH", "CHAR_LENGTH", "CHECK", "CLOB", "CLOSE", "COALESCE", "COLLATE", "COLLATION", "COLUMN", "COMMIT", "CONNECT", "CONNECTION", "CONSTRAINT", "CONSTRAINTS", "CONTINUE", "CONVERT", "CORRESPONDING", "COUNT", "CREATE", "CROSS", "CURRENT", "CURRENT_DATE", "CURRENT_TIME", "CURRENT_TIMESTAMP", "CURRENT_USER", "CURSOR", "DATE", "DATE_ADD", "DATE_DIFF", "DAY", "DEALLOCATE", "DEC", "DECIMAL", "DECLARE", "DEFAULT", "DEFERRABLE", "DEFERRED", "DELETE", "DESC", "DESCRIBE", "DESCRIPTOR", "DIAGNOSTICS", "DISCONNECT", "DISTINCT", "DOMAIN", "DOUBLE", "DROP", "ELSE", "END", "END-EXEC", "ESCAPE", "EXCEPT", "EXCEPTION", "EXEC", "EXECUTE", "EXISTS", "EXTERNAL", "EXTRACT", "FALSE", "FETCH", "FIRST", "FLOAT", "FOR", "FOREIGN", "FOUND", "FROM", "FULL", "GET", "GLOBAL", "GO", "GOTO", "GRANT", "GROUP", "HAVING", "HOUR", "IDENTITY", "IMMEDIATE", "IN", "INDEX", "INDICATOR", "INITIALLY", "INNER", "INPUT", "INSENSITIVE", "INSERT", "INT", "INTEGER", "INTERSECT", "INTERVAL", "INTO", "IS", "ISOLATION", "JOIN", "KEY", "LANGUAGE", "LAST", "LEADING", "LEFT", "LEVEL", "LIKE", "LIMIT", "LIST", "LOCAL", "LOWER", "MATCH", "MAX", "MIN", "MINUTE", "MISSING", "MODULE", "MONTH", "NAMES", "NATIONAL", "NATURAL", "NCHAR", "NEXT", "NO", "NOT", "NULL", "NULLIF", "NUMERIC", "OCTET_LENGTH", "OF", "ON", "ONLY", "OPEN", "OPTION", "OR", "ORDER", "OUTER", "OUTPUT", "OVERLAPS", "PAD", "PARTIAL", "PIVOT", "POSITION", "PRECISION", "PREPARE", "PRESERVE", "PRIMARY", "PRIOR", "PRIVILEGES", "PROCEDURE", "PUBLIC", "READ", "REAL", "REFERENCES", "RELATIVE", "REMOVE", "RESTRICT", "REVOKE", "RIGHT", "ROLLBACK", "ROWS", "SCHEMA", "SCROLL", "SECOND", "SECTION", "SELECT", "SESSION", "SESSION_USER", "SET", "SEXP", "SIZE", "SMALLINT", "SOME", "SPACE", "SQL", "SQLCODE", "SQLERROR", "SQLSTATE", "STRING", "STRUCT", "SUBSTRING", "SUM", "SYMBOL", "SYSTEM_USER", "TABLE", "TEMPORARY", "THEN", "TIME", "TIMESTAMP", "TIMEZONE_HOUR", "TIMEZONE_MINUTE", "TO", "TO_STRING", "TO_TIMESTAMP", "TRAILING", "TRANSACTION", "TRANSLATE", "TRANSLATION", "TRIM", "TRUE", "TUPLE", "TXID", "UNDROP", "UNION", "UNIQUE", "UNKNOWN", "UNPIVOT", "UPDATE", "UPPER", "USAGE", "USER", "USING", "UTCNOW", "VALUE", "VALUES", "VARCHAR", "VARYING", "VIEW", "WHEN", "WHENEVER", "WHERE", "WITH", "WORK", "WRITE", "YEAR", "ZONE"];
+    const partiQLReservedWordsCheck = partiQLReservedWords.includes(tableName.toUpperCase());
+
+    if (partiQLReservedWordsCheck) {
+        throw new Error(`Please check tableName does not contain PartiQL reserved words: https://docs.aws.amazon.com/qldb/latest/developerguide/ql-reference.reserved.html`)
+    }
+
+    return true;
+}
+
+/**
+ * Checks a string for compliance with ledger naming constrains: https://docs.aws.amazon.com/qldb/latest/developerguide/limits.html#limits.naming
+ * @param ledgerName A string containing a name of a table.
+ * @returns Returns true if string complies with ledger naming constrains and trows an error if otherwise.
+ */
+export function validateLedgerNameConstrains(ledgerName: string): boolean {
+    const nameStringRegexTemplate = /^[A-Za-z0-9][A-Za-z0-9-]{0,30}[A-Za-z0-9]{0,1}$/g;
+    const nameStringRegexCheckResult = nameStringRegexTemplate.test(ledgerName);
+
+    if (!nameStringRegexCheckResult) {
+        throw new Error(`Please check ledgerName complies with Amazon QLDB table naming constrains: https://docs.aws.amazon.com/qldb/latest/developerguide/limits.html#limits.naming`)
+    }
+
+    const nameNonDigitRegexTemplate = /\D/g;
+    const nameNonDigitRegexCheckResult = nameNonDigitRegexTemplate.test(ledgerName);
+
+    if (!nameNonDigitRegexCheckResult) {
+        throw new Error(`Please check ledgerName - can not be all digits: https://docs.aws.amazon.com/qldb/latest/developerguide/limits.html#limits.naming`)
+    }
+
+    const nameTwoHyphensRegexTemplate = /--/g;
+    const nameTwoHyphensRegexCheckResult = nameTwoHyphensRegexTemplate.test(ledgerName);
+
+    if (nameTwoHyphensRegexCheckResult) {
+        throw new Error(`Please check ledgerName - can not contain two consecutive hyphens: https://docs.aws.amazon.com/qldb/latest/developerguide/limits.html#limits.naming`)
+    }
+
+    return true;
+}
+
+/**
+ * Checks a string for compliance with document attribute naming constrains.
+ * @param attributeName A string containing a name of a document attribute.
+ * @returns Returns true if string complies with attribute naming constrains and trows an error if otherwise.
+ */
+export function validateAttributeNameConstrains(attributeName: string): boolean {
+    const nameStringRegexTemplate = /^[A-Za-z_][A-Za-z0-9_]{0,127}$/g;
+    const nameStringRegexCheckResult = nameStringRegexTemplate.test(attributeName);
+
+    if (!nameStringRegexCheckResult) {
+        throw new Error(`Please check attributeName complies with Amazon QLDB table naming constrains: https://docs.aws.amazon.com/qldb/latest/developerguide/limits.html#limits.naming`)
+    }
+
+    const partiQLReservedWords = ["ABSOLUTE", "ACTION", "ADD", "ALL", "ALLOCATE", "ALTER", "AND", "ANY", "ARE", "AS", "ASC", "ASSERTION", "AT", "AUTHORIZATION", "AVG", "BAG", "BEGIN", "BETWEEN", "BIT", "BIT_LENGTH", "BLOB", "BOOL", "BOOLEAN", "BOTH", "BY", "CASCADE", "CASCADED", "CASE", "CAST", "CATALOG", "CHAR", "CHARACTER", "CHARACTER_LENGTH", "CHAR_LENGTH", "CHECK", "CLOB", "CLOSE", "COALESCE", "COLLATE", "COLLATION", "COLUMN", "COMMIT", "CONNECT", "CONNECTION", "CONSTRAINT", "CONSTRAINTS", "CONTINUE", "CONVERT", "CORRESPONDING", "COUNT", "CREATE", "CROSS", "CURRENT", "CURRENT_DATE", "CURRENT_TIME", "CURRENT_TIMESTAMP", "CURRENT_USER", "CURSOR", "DATE", "DATE_ADD", "DATE_DIFF", "DAY", "DEALLOCATE", "DEC", "DECIMAL", "DECLARE", "DEFAULT", "DEFERRABLE", "DEFERRED", "DELETE", "DESC", "DESCRIBE", "DESCRIPTOR", "DIAGNOSTICS", "DISCONNECT", "DISTINCT", "DOMAIN", "DOUBLE", "DROP", "ELSE", "END", "END-EXEC", "ESCAPE", "EXCEPT", "EXCEPTION", "EXEC", "EXECUTE", "EXISTS", "EXTERNAL", "EXTRACT", "FALSE", "FETCH", "FIRST", "FLOAT", "FOR", "FOREIGN", "FOUND", "FROM", "FULL", "GET", "GLOBAL", "GO", "GOTO", "GRANT", "GROUP", "HAVING", "HOUR", "IDENTITY", "IMMEDIATE", "IN", "INDEX", "INDICATOR", "INITIALLY", "INNER", "INPUT", "INSENSITIVE", "INSERT", "INT", "INTEGER", "INTERSECT", "INTERVAL", "INTO", "IS", "ISOLATION", "JOIN", "KEY", "LANGUAGE", "LAST", "LEADING", "LEFT", "LEVEL", "LIKE", "LIMIT", "LIST", "LOCAL", "LOWER", "MATCH", "MAX", "MIN", "MINUTE", "MISSING", "MODULE", "MONTH", "NAMES", "NATIONAL", "NATURAL", "NCHAR", "NEXT", "NO", "NOT", "NULL", "NULLIF", "NUMERIC", "OCTET_LENGTH", "OF", "ON", "ONLY", "OPEN", "OPTION", "OR", "ORDER", "OUTER", "OUTPUT", "OVERLAPS", "PAD", "PARTIAL", "PIVOT", "POSITION", "PRECISION", "PREPARE", "PRESERVE", "PRIMARY", "PRIOR", "PRIVILEGES", "PROCEDURE", "PUBLIC", "READ", "REAL", "REFERENCES", "RELATIVE", "REMOVE", "RESTRICT", "REVOKE", "RIGHT", "ROLLBACK", "ROWS", "SCHEMA", "SCROLL", "SECOND", "SECTION", "SELECT", "SESSION", "SESSION_USER", "SET", "SEXP", "SIZE", "SMALLINT", "SOME", "SPACE", "SQL", "SQLCODE", "SQLERROR", "SQLSTATE", "STRING", "STRUCT", "SUBSTRING", "SUM", "SYMBOL", "SYSTEM_USER", "TABLE", "TEMPORARY", "THEN", "TIME", "TIMESTAMP", "TIMEZONE_HOUR", "TIMEZONE_MINUTE", "TO", "TO_STRING", "TO_TIMESTAMP", "TRAILING", "TRANSACTION", "TRANSLATE", "TRANSLATION", "TRIM", "TRUE", "TUPLE", "TXID", "UNDROP", "UNION", "UNIQUE", "UNKNOWN", "UNPIVOT", "UPDATE", "UPPER", "USAGE", "USER", "USING", "UTCNOW", "VALUE", "VALUES", "VARCHAR", "VARYING", "VIEW", "WHEN", "WHENEVER", "WHERE", "WITH", "WORK", "WRITE", "YEAR", "ZONE"];
+    const partiQLReservedWordsCheck = partiQLReservedWords.includes(attributeName.toUpperCase());
+
+    if (partiQLReservedWordsCheck) {
+        throw new Error(`Please check attributeName does not contain PartiQL reserved words: https://docs.aws.amazon.com/qldb/latest/developerguide/ql-reference.reserved.html`)
+    }
+
+    return true;
 }

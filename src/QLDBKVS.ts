@@ -22,7 +22,7 @@ import { VALUE_ATTRIBUTE_NAME, KEY_ATTRIBUTE_NAME, DEFAULT_DOWNLOADS_PATH, MAX_Q
 
 const fs = require('fs');
 const Util = require('util');
-const CustomUtil = require('./Util');
+const { sleep, validateTableNameConstrains, validateLedgerNameConstrains } = require('./Util');
 
 const mkdir: any = Util.promisify(fs.mkdir);
 const writeFile: any = Util.promisify(fs.writeFile);
@@ -52,6 +52,10 @@ export class QLDBKVS {
             if (!tableName) {
                 throw new Error(`${fcnName}: Please specify tableName, which is the name of a table you are planning to use`);
             }
+
+            validateLedgerNameConstrains(ledgerName);
+            validateTableNameConstrains(tableName);
+
             this.ledgerName = ledgerName;
             this.tableName = tableName;
             this.qldbHelper = new QLDBHelper(ledgerName);
@@ -166,7 +170,7 @@ export class QLDBKVS {
                 let cycles = TABLE_CREATION_MAX_WAIT / 100;
                 logger.debug(`${fcnName} Table with name ${tableName} still does not exist, waiting for it to be created.`)
                 do {
-                    await CustomUtil.sleep(100);
+                    await sleep(100);
                     cycles--;
                     if (cycles === 0) {
                         throw new Error(`Could not create a table with name ${tableName} in ${TABLE_CREATION_MAX_WAIT} milliseconds`)
@@ -331,7 +335,7 @@ export class QLDBKVS {
                 let cycles = TABLE_CREATION_MAX_WAIT / 100;
                 logger.debug(`${fcnName} Table with name ${tableName} still does not exist, waiting for it to be created.`)
                 do {
-                    await CustomUtil.sleep(100);
+                    await sleep(100);
                     cycles--;
                     if (cycles === 0) {
                         throw new Error(`Could not create a table with name ${tableName} in ${TABLE_CREATION_MAX_WAIT} milliseconds`)
