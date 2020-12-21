@@ -61,7 +61,7 @@ export async function lookupBlockAddressAndDocIdForKey(txn: TransactionExecutor,
 
         validateTableNameConstrains(tableName);
         validateAttributeNameConstrains(keyAttributeName);
-        const query: string = `SELECT blockAddress, metadata.id FROM _ql_committed_${tableName} WHERE data.${keyAttributeName} = ?`;
+        const query = `SELECT blockAddress, metadata.id FROM _ql_committed_${tableName} WHERE data.${keyAttributeName} = ?`;
         logger.debug(`${fcnName} Constructed query: ${query}`);
 
         const result: Result = await txn.execute(query, keyAttributeValue)
@@ -164,7 +164,7 @@ export async function getDocumentLedgerMetadata(
         const proof: ValueHolder = revisionResponse.Proof;
         logger.debug(`${fcnName} Got back a proof: ${valueHolderToString(proof)}.`);
 
-        const result: LedgerMetadata = {
+        return {
             LedgerName: ledgerName,
             TableName: tableName,
             BlockAddress: blockAddress,
@@ -172,9 +172,7 @@ export async function getDocumentLedgerMetadata(
             RevisionHash: revisionHash,
             Proof: proof,
             LedgerDigest: digest
-        }
-
-        return result;
+        };
     } catch (err) {
         throw `${fcnName} ${err} `
     }

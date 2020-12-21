@@ -29,11 +29,11 @@ const logger = log.getLogger("qldb-helper");
 * @throws Error: If error happen during the process.
 */
 export async function upsert(txn: TransactionExecutor, tableName: string, keyAttributeName: string, documentJSON: object): Promise<number> {
-    const fcnName: string = "[UpsertDocument.upsert]"
+    const fcnName = "[UpsertDocument.upsert]"
     const startTime: number = new Date().getTime();
     try {
         // Retrieve document id by key value
-        let documentJSONKeyValue: string = "";
+        let documentJSONKeyValue = "";
         if (keyAttributeName in documentJSON) {
             documentJSONKeyValue = documentJSON[keyAttributeName as keyof typeof documentJSON];
         } else {
@@ -53,7 +53,7 @@ export async function upsert(txn: TransactionExecutor, tableName: string, keyAtt
         }
 
         // Preparing request statement and parameters
-        let statement: string = "";
+        let statement = "";
 
         let result: Result
 

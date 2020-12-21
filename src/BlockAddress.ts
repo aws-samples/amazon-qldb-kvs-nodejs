@@ -41,9 +41,8 @@ export function blockAddressToValueHolder(value: dom.Value): ValueHolder {
         let blockAddressValue: dom.Value = getBlockAddressValue(value);
         const strandId: string = getStrandId(blockAddressValue);
         const sequenceNo: number = getSequenceNo(blockAddressValue);
-        const valueHolder: string = `{strandId: "${strandId}", sequenceNo: ${sequenceNo}}`;
-        const blockAddress: ValueHolder = { IonText: valueHolder };
-        return blockAddress;
+        const valueHolder = `{strandId: "${strandId}", sequenceNo: ${sequenceNo}}`;
+        return { IonText: valueHolder };
     } catch (err) {
         logger.debug(`${fcnName} ${err.stack} `)
         throw `${fcnName} ${err} `

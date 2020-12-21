@@ -44,7 +44,7 @@ export class QLDBHelper {
     qldbDriver: QldbDriver;
 
     constructor(ledgerName: string) {
-        const fcnName: string = "[QLDBHelper.constructor]";
+        const fcnName = "[QLDBHelper.constructor]";
         try {
             validateLedgerNameConstrains(ledgerName);
             this.ledgerName = ledgerName;
@@ -161,10 +161,10 @@ export class QLDBHelper {
             if (tableNames.indexOf(tableName.toUpperCase()) < 0) {
                 // Creating table
                 return this.qldbDriver.executeLambda(async (txn: TransactionExecutor) => {
-                    let resultsTotal: number = 0;
+                    let resultsTotal = 0;
 
                     validateTableNameConstrains(tableName);
-                    const statement: string = `CREATE TABLE ${tableName}`;
+                    const statement = `CREATE TABLE ${tableName}`;
                     const resultCreateTable: Result = await txn.execute(statement)
                     logger.info(`${fcnName} Successfully created table ${tableName}. Creating index.`);
                     resultsTotal += resultCreateTable.getResultList().length;
@@ -241,7 +241,7 @@ export class QLDBHelper {
     * @throws Error: If error happen during the process.
     */
     async upsertDocumentWithKeyAttribute(tableName: string, keyAttributeName: string, documentJSON: object): Promise<number> {
-        const fcnName: string = "[QLDBHelper.upsert]"
+        const fcnName = "[QLDBHelper.upsert]"
         const startTime: number = new Date().getTime();
 
         try {
@@ -326,7 +326,7 @@ export class QLDBHelper {
      * @throws Error: If error happen during the process.
      */
     async getDocumentVersionByIdAndBlock(tableName: string, documentId: string, blockAddress: ValueHolder): Promise<dom.Value> {
-        const fcnName: string = "[QLDBHelper.getDocumentVersionByIdAndBlock]"
+        const fcnName = "[QLDBHelper.getDocumentVersionByIdAndBlock]"
         const startTime: number = new Date().getTime();
 
         try {
@@ -356,7 +356,7 @@ export class QLDBHelper {
      * @throws Error: If error happen during the process.
      */
     async getDocumentHistory(tableName: string, keyAttributeName: string, keyAttributeValue: string): Promise<dom.Value[]> {
-        const fcnName: string = "[QLDBHelper.getDocumentRevisionByIdAndBlock]"
+        const fcnName = "[QLDBHelper.getDocumentRevisionByIdAndBlock]"
         const startTime: number = new Date().getTime();
 
         try {

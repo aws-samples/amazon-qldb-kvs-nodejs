@@ -45,8 +45,7 @@ export async function getRevision(
             DocumentId: documentId,
             DigestTipAddress: digestTipAddress
         };
-        const result: GetRevisionResponse = await qldbClient.getRevision(request).promise();
-        return result;
+        return await qldbClient.getRevision(request).promise();
     } catch (err) {
         throw `${fcnName} ${err} `
     }

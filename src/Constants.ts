@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-export const KEY_ATTRIBUTE_NAME: string = "_key";
-export const VALUE_ATTRIBUTE_NAME: string = "_val";
-export const DEFAULT_DOWNLOADS_PATH: string = "/tmp/downloads";
-export const MAX_QLDB_DOCUMENT_SIZE: number = 131072;
-export const MAX_KEYS_TO_RETRIEVE: number = 32;
+export const KEY_ATTRIBUTE_NAME = "_key";
+export const VALUE_ATTRIBUTE_NAME = "_val";
+export const DEFAULT_DOWNLOADS_PATH = "/tmp/downloads";
+export const MAX_QLDB_DOCUMENT_SIZE = 131072;
+export const MAX_KEYS_TO_RETRIEVE = 32;

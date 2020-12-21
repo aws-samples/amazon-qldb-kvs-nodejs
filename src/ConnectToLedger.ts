@@ -32,6 +32,5 @@ export function createQldbDriver(
     ledgerName: string,
     serviceConfigurationOptions: ClientConfiguration = {}
 ): QldbDriver {
-    const qldbDriver: QldbDriver = new QldbDriver(ledgerName, serviceConfigurationOptions);
-    return qldbDriver;
+    return new QldbDriver(ledgerName, serviceConfigurationOptions);
 }

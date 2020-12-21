@@ -19,12 +19,10 @@ import { createHash } from "crypto";
 import { dom, toBase64 } from "ion-js";
 import { log } from "./Logging";
 const logger = log.getLogger("qldb-helper");
-import { Base64EncodedString } from "./Util";
+import { Base64EncodedString, getBlobValue } from "./Util";
 
-import { getBlobValue } from "./Util";
-
-const HASH_LENGTH: number = 32;
-const UPPER_BOUND: number = 8;
+const HASH_LENGTH = 32;
+const UPPER_BOUND = 8;
 
 /**
  * Build the candidate digest representing the entire ledger from the Proof hashes.
@@ -34,8 +32,8 @@ const UPPER_BOUND: number = 8;
  */
 function buildCandidateDigest(proof: ValueHolder, leafHash: Uint8Array): Uint8Array {
     const parsedProof: Uint8Array[] = parseProof(proof);
-    const rootHash: Uint8Array = calculateRootHashFromInternalHash(parsedProof, leafHash);
-    return rootHash;
+    // Return root hash
+    return calculateRootHashFromInternalHash(parsedProof, leafHash);
 }
 
 /**
@@ -45,8 +43,8 @@ function buildCandidateDigest(proof: ValueHolder, leafHash: Uint8Array): Uint8Ar
  * @returns The root hash constructed by combining internal hashes.
  */
 function calculateRootHashFromInternalHash(internalHashes: Uint8Array[], leafHash: Uint8Array): Uint8Array {
-    const rootHash: Uint8Array = internalHashes.reduce(joinHashesPairwise, leafHash);
-    return rootHash;
+    // Return root hash
+    return internalHashes.reduce(joinHashesPairwise, leafHash);
 }
 
 /**
@@ -127,8 +125,8 @@ export function joinHashesPairwise(h1: Uint8Array, h2: Uint8Array): Uint8Array {
     }
     const hash = createHash('sha256');
     hash.update(concat);
-    const newDigest: Uint8Array = hash.digest();
-    return newDigest;
+    // Return new digest
+    return hash.digest();
 }
 
 /**
@@ -138,8 +136,8 @@ export function joinHashesPairwise(h1: Uint8Array, h2: Uint8Array): Uint8Array {
  */
 export function parseBlock(valueHolder: ValueHolder): Uint8Array {
     const block: dom.Value = dom.load(valueHolder.IonText);
-    const blockHash: Uint8Array = getBlobValue(block, "blockHash");
-    return blockHash;
+    // Return block hash
+    return getBlobValue(block, "blockHash");
 }
 
 /**

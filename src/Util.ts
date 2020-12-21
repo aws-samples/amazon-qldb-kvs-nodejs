@@ -38,7 +38,7 @@ export type Base64EncodedString = string;
  * @returns The string representation of the supplied BlockResponse.
  */
 export function blockResponseToString(blockResponse: GetBlockResponse): string {
-    let stringBuilder: string = "";
+    let stringBuilder = "";
     if (blockResponse.Block.IonText) {
         stringBuilder = stringBuilder + "Block: " + blockResponse.Block.IonText + ", ";
     }
@@ -58,7 +58,7 @@ export function blockResponseToString(blockResponse: GetBlockResponse): string {
  * @returns The string representation of the supplied GetDigestResponse.
  */
 export function digestResponseToString(digestResponse: GetDigestResponse): string {
-    let stringBuilder: string = "";
+    let stringBuilder = "";
     if (digestResponse.Digest) {
         stringBuilder += "Digest: " + JSON.stringify(toBase64(<Uint8Array>digestResponse.Digest)) + ", ";
     }
@@ -86,12 +86,12 @@ export async function getDocumentIds(
     keyAttributeName: string,
     keyAttributeValue: string
 ): Promise<string[]> {
-    const fcnName: string = "[Util.getDocumentIds]"
+    const fcnName = "[Util.getDocumentIds]"
     const startTime: number = new Date().getTime();
 
     validateTableNameConstrains(tableName);
     validateAttributeNameConstrains(keyAttributeName);
-    const query: string = `SELECT id FROM ${tableName} AS t BY id WHERE t.${keyAttributeName} = ?`;
+    const query = `SELECT id FROM ${tableName} AS t BY id WHERE t.${keyAttributeName} = ?`;
     let documentIds: string[] = [];
 
     try {
@@ -143,7 +143,7 @@ export function getBlobValue(value: dom.Value, path: string): Uint8Array | null 
  * @returns The string representation of the supplied ValueHolder.
  */
 export function valueHolderToString(valueHolder: ValueHolder): string {
-    const stringBuilder: string = `{ IonText: ${valueHolder.IonText}}`;
+    const stringBuilder = `{ IonText: ${valueHolder.IonText}}`;
     const writer: Writer = makePrettyWriter();
     const reader: Reader = makeReader(stringBuilder);
     writer.writeValues(reader);

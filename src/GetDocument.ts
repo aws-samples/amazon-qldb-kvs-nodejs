@@ -50,13 +50,13 @@ function getBindParametersString(numberOfParams: number): String {
  * @throws Error: If error happen during the process.
  */
 export async function getByKeyAttribute(txn: TransactionExecutor, tableName: string, keyAttributeName: string, keyAttributeValue: string): Promise<dom.Value[]> {
-    const fcnName: string = "[QLDBHelper.getByKeyAttribute]"
+    const fcnName = "[QLDBHelper.getByKeyAttribute]"
     const startTime: number = new Date().getTime();
 
     try {
         validateTableNameConstrains(tableName);
         validateAttributeNameConstrains(keyAttributeName);
-        const query: string = `SELECT * FROM ${tableName} AS d BY id  WHERE d.${keyAttributeName} = ?`;
+        const query = `SELECT * FROM ${tableName} AS d BY id  WHERE d.${keyAttributeName} = ?`;
 
         logger.debug(`${fcnName} Retrieving document values for Key: ${keyAttributeValue}`);
         logger.debug(`${fcnName} Query statement: ${query}`);
@@ -86,14 +86,14 @@ export async function getByKeyAttribute(txn: TransactionExecutor, tableName: str
  * @throws Error: If error happen during the process.
  */
 export async function getByKeyAttributes(txn: TransactionExecutor, tableName: string, keyAttributeName: string, keyAttributeValues: string[]): Promise<dom.Value[]> {
-    const fcnName: string = "[QLDBHelper.getByKeyAttributes]"
+    const fcnName = "[QLDBHelper.getByKeyAttributes]"
     const startTime: number = new Date().getTime();
 
     try {
 
         validateTableNameConstrains(tableName);
         validateAttributeNameConstrains(keyAttributeName);
-        const query: string = `SELECT * FROM ${tableName} AS d BY id  WHERE d.${keyAttributeName} IN ${getBindParametersString(keyAttributeValues.length)}`;
+        const query = `SELECT * FROM ${tableName} AS d BY id  WHERE d.${keyAttributeName} IN ${getBindParametersString(keyAttributeValues.length)}`;
 
         if (keyAttributeValues.length > MAX_KEYS_TO_RETRIEVE) throw `We should retrieve not more then ${MAX_KEYS_TO_RETRIEVE} keys at a time.`
 
@@ -124,12 +124,12 @@ export async function getByKeyAttributes(txn: TransactionExecutor, tableName: st
  * @throws Error: If error happen during the process.
  */
 export async function getDocumentById(txn: TransactionExecutor, tableName: string, documentId: string): Promise<dom.Value[]> {
-    const fcnName: string = "[QLDBHelper.getDocumentById]"
+    const fcnName = "[QLDBHelper.getDocumentById]"
     const startTime: number = new Date().getTime();
 
     try {
         validateTableNameConstrains(tableName);
-        const query: string = `SELECT * FROM ${tableName} BY id  WHERE id = ?`;
+        const query = `SELECT * FROM ${tableName} BY id  WHERE id = ?`;
 
         logger.debug(`${fcnName} Retrieving document with Id: ${documentId}`);
         logger.debug(`${fcnName} Query statement: ${query}`);

@@ -44,7 +44,7 @@ export class QLDBKVS {
      * @returns {QLDBKVS} initialized
      */
     constructor(ledgerName: string, tableName: string) {
-        const fcnName: string = "[QLDBKVS.constructor]";
+        const fcnName = "[QLDBKVS.constructor]";
         try {
             if (!ledgerName) {
                 throw new Error(`${fcnName}: Please specify ledgerName`);
@@ -106,10 +106,8 @@ export class QLDBKVS {
 
             logger.debug(`${fcnName} Getting ${paramId} from ledger ${ledgerName} and table ${tableName} to ${filePath}`);
 
-            if (!localFilePath) {
-                if (!fs.existsSync(DEFAULT_DOWNLOADS_PATH)) {
-                    await mkdir(DEFAULT_DOWNLOADS_PATH);
-                }
+            if (!localFilePath && !fs.existsSync(DEFAULT_DOWNLOADS_PATH)) {
+                await mkdir(DEFAULT_DOWNLOADS_PATH);
             }
 
             const resultION = await this.qldbHelper.getDocumentByKeyAttribute(tableName, KEY_ATTRIBUTE_NAME, key);
@@ -122,7 +120,7 @@ export class QLDBKVS {
             return localFilePath;
         } catch (err) {
             //throw `${fcnName}: ${err}`;
-            const msg: string = `${fcnName} Requested record does not exist: ${err}`;
+            const msg = `${fcnName} Requested record does not exist: ${err}`;
             logger.error(msg);
             throw new Error(msg);
         }
@@ -189,7 +187,7 @@ export class QLDBKVS {
             const documentIds = await this.qldbHelper.getDocumentIds(tableName, KEY_ATTRIBUTE_NAME, key);
             return documentIds[0];
         } catch (err) {
-            const msg: string = `${fcnName} Could not upload the file: ${err}`;
+            const msg = `${fcnName} Could not upload the file: ${err}`;
             logger.error(msg);
             throw new Error(msg);
         }
@@ -234,7 +232,7 @@ export class QLDBKVS {
             return returnValue;
 
         } catch (err) {
-            const msg: string = `${fcnName} Requested record does not exist: ${err}`;
+            const msg = `${fcnName} Requested record does not exist: ${err}`;
             logger.debug(msg);
             throw new Error(msg);
         }
@@ -285,7 +283,7 @@ export class QLDBKVS {
                 }
             }
         } catch (err) {
-            const msg: string = `${fcnName} Requested record does not exist: ${err}`;
+            const msg = `${fcnName} Requested record does not exist: ${err}`;
             logger.debug(msg);
             throw new Error(msg);
         }
@@ -357,7 +355,7 @@ export class QLDBKVS {
             return documentIds[0];
 
         } catch (err) {
-            const msg: string = `${fcnName} Could not set the value: ${err}`;
+            const msg = `${fcnName} Could not set the value: ${err}`;
             logger.error(msg);
             throw new Error(msg);
         }
@@ -394,7 +392,7 @@ export class QLDBKVS {
             return result;
 
         } catch (err) {
-            const msg: string = `${fcnName} Requested record does not exist: ${err}`;
+            const msg = `${fcnName} Requested record does not exist: ${err}`;
             logger.error(msg);
             throw new Error(msg);
         }
@@ -431,7 +429,7 @@ export class QLDBKVS {
             return result;
 
         } catch (err) {
-            const msg: string = `${fcnName} Requested record does not exist: ${err}`;
+            const msg = `${fcnName} Requested record does not exist: ${err}`;
             logger.error(msg);
             throw new Error(msg);
         }
@@ -453,14 +451,12 @@ export class QLDBKVS {
 
             logger.debug(`${fcnName} Verifying metadata for ${ledgerMetadata.DocumentId} from ledger ${ledgerName} and table ${tableName} into a JSON object`);
 
-            const result: boolean = await this.qldbHelper.verifyDocumentMetadataWithUserData(ledgerMetadata).catch((err) => {
+            return await this.qldbHelper.verifyDocumentMetadataWithUserData(ledgerMetadata).catch((err) => {
                 throw err;
             });
 
-            return result;
-
         } catch (err) {
-            const msg: string = `${fcnName} Requested record does not exist: ${err}`;
+            const msg = `${fcnName} Requested record does not exist: ${err}`;
             logger.error(msg);
             throw new Error(msg);
         }

@@ -31,14 +31,14 @@ const logger = log.getLogger("qldb-helper");
  * @throws Error: If error happen during the process.
  */
 export async function getDocumentRevisionByIdAndBlock(txn: TransactionExecutor, tableName: string, documentId: string, blockAddress: ValueHolder): Promise<dom.Value> {
-    const fcnName: string = "[GetDocumentHistory.getDocumentRevisionByIdAndBlock]"
+    const fcnName = "[GetDocumentHistory.getDocumentRevisionByIdAndBlock]"
     const startTime: number = new Date().getTime();
 
     try {
         const blockAddressIon: dom.Value = dom.load(blockAddress.IonText);
         const blockSequenceNo = blockAddressIon.get("sequenceNo");
         validateTableNameConstrains(tableName);
-        const query: string = `SELECT * FROM history( ${tableName} ) AS h WHERE h.metadata.id = ? AND h.blockAddress.sequenceNo = ?`;
+        const query = `SELECT * FROM history( ${tableName} ) AS h WHERE h.metadata.id = ? AND h.blockAddress.sequenceNo = ?`;
 
         logger.debug(`${fcnName} Retrieving document values for Id: ${documentId} and Block Sequence Number: ${blockSequenceNo}`);
         logger.debug(`${fcnName} Query statement: ${query}`);
@@ -68,7 +68,7 @@ export async function getDocumentRevisionByIdAndBlock(txn: TransactionExecutor, 
  * @throws Error: If error happen during the process.
  */
 export async function getDocumentHistory(txn: TransactionExecutor, tableName: string, keyAttributeName: string, keyAttributeValue: string): Promise<dom.Value[]> {
-    const fcnName: string = "[GetDocumentHistory.getDocumentRevisionByIdAndBlock]"
+    const fcnName = "[GetDocumentHistory.getDocumentRevisionByIdAndBlock]"
     const startTime: number = new Date().getTime();
     let documentId: string;
 
@@ -77,7 +77,7 @@ export async function getDocumentHistory(txn: TransactionExecutor, tableName: st
         documentId = documentIds[0];
 
         validateTableNameConstrains(tableName);
-        const query: string = `SELECT * FROM history( ${tableName} ) AS h WHERE h.metadata.id = ? `;
+        const query = `SELECT * FROM history( ${tableName} ) AS h WHERE h.metadata.id = ? `;
 
         logger.debug(`${fcnName} Retrieving document history for Id: ${documentId}`);
         logger.debug(`${fcnName} Query statement: ${query}`);
