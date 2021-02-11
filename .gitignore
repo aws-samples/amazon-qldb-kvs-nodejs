@@ -1,3 +1,5 @@
 dist
 node_modules
 acat_report
+log
+*.log

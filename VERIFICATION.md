@@ -24,13 +24,13 @@
 2. Retrieve a corresponding revision of a document with specified ID from QLDB.
 3. Check the revision hash provided by the user (a value of `RevisionHash` attribute from above) is the same with the one we have got from QLDB.
 4. Check the DocumentId provided by the user matches the Revision ID retrieved from QLDB (now I think this might be an overkill)
-5. Compare block address data provided by the user with the block address data retrieved from QLDB (again, feels like an overkill now, because we already used it to retrieve the revision..)
+5. Compare block address data provided by the user with the block address data retrieved from QLDB
 
 By now we verified that document revision data provided by the user matches the corresponding revision metadata retrieved from QLDB. Next, we want to verify that the metadata in QLDB has not been changed as well (trust, but verify).
 
 To do that, we need to verify that we can derive the same Ledger Digest as specified by the user from the Revision Hash specified by the user and using a hash chain, we've got for corresponding revision from QLDB:
 
-1. Take the Revision Hash and Ledger Digest provided by the user and a Proof (hash chain), retrieved from QLDB. 
+1. Take the Revision Hash and Ledger Digest provided by the user and a proof (hash chain), retrieved from QLDB. 
 
 2. Generate a candidate Ledger Digest using the Revision Hash provided by the user and Proof (a hash chain), retrieved from QLDB.
 
