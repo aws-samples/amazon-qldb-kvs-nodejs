@@ -15,9 +15,15 @@
  */
 
 import { TransactionExecutor, Result } from "amazon-qldb-driver-nodejs";
-import { getDocumentIds, validateTableNameConstrains } from "./Util"
+import { validateTableNameConstrains } from "./Util"
+import { getDocumentIds } from "./GetDocument"
 import { log } from "./Logging";
 const logger = log.getLogger("qldb-helper");
+
+export class UpsertResult {
+    documentId: string;
+    txId: string;
+}
 
 /**
 * Updates or inserts a new document, using keyAttributeName to hold a unique key.
@@ -28,9 +34,10 @@ const logger = log.getLogger("qldb-helper");
 * @returns A number of changes made to the ledger.
 * @throws Error: If error happen during the process.
 */
-export async function upsert(txn: TransactionExecutor, tableName: string, keyAttributeName: string, documentJSON: object): Promise<number> {
+export async function upsert(txn: TransactionExecutor, tableName: string, keyAttributeName: string, documentJSON: object): Promise<UpsertResult[]> {
     const fcnName = "[UpsertDocument.upsert]"
     const startTime: number = new Date().getTime();
+    const txId = txn.getTransactionId();
     try {
         // Retrieve document id by key value
         let documentJSONKeyValue = "";
@@ -79,10 +86,17 @@ export async function upsert(txn: TransactionExecutor, tableName: string, keyAtt
         }
 
         logger.info(`${fcnName} Document with key "${documentJSONKeyValue}" is added to the table with name "${tableName}"`);
-        const endTime = new Date().getTime();
-        logger.debug(`${fcnName} Execution time: ${endTime - startTime}ms`)
-        return result.getResultList().length;
+        logger.debug(`${fcnName} Returned results list: ${result.getResultList()}`);
+        return result.getResultList().map((returnObject) => {
+            return {
+                documentId: returnObject.get("documentId").stringValue(),
+                txId: txId
+            }
+        });
     } catch (err) {
         throw `${fcnName} ${err}`;
+    } finally {
+        const endTime = new Date().getTime();
+        logger.debug(`${fcnName} Execution time: ${endTime - startTime}ms`)
     }
 }

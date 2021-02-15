@@ -148,3 +148,44 @@ export async function getDocumentById(txn: TransactionExecutor, tableName: strin
         throw new Error(err);
     }
 }
+/**
+* Get the document IDs from the given table.
+* @param txn The {@linkcode TransactionExecutor} for lambda execute.
+* @param tableName The table name to query.
+* @param keyAttributeName A keyAttributeName to query.
+* @param keyAttributeValue The key of the given keyAttributeName.
+* @returns Promise which fulfills with the document ID as a string.
+*/
+export async function getDocumentIds(
+    txn: TransactionExecutor,
+    tableName: string,
+    keyAttributeName: string,
+    keyAttributeValue: string
+): Promise<string[]> {
+    const fcnName = "[Util.getDocumentIds]"
+    const startTime: number = new Date().getTime();
+
+    validateTableNameConstrains(tableName);
+    validateAttributeNameConstrains(keyAttributeName);
+    const query = `SELECT id FROM ${tableName} AS t BY id WHERE t.${keyAttributeName} = ?`;
+    let documentIds: string[] = [];
+
+    try {
+        const result: Result = await txn.execute(query, keyAttributeValue);
+        const resultList: dom.Value[] = result.getResultList();
+        if (resultList.length === 0) {
+            throw `Unable to retrieve document ID using ${keyAttributeValue}.`
+        }
+
+        resultList.forEach(async (result, index) => {
+            let id: string = resultList[index].get("id").stringValue();
+            documentIds.push(id)
+        })
+        return documentIds;
+    } catch (err) {
+        const endTime: number = new Date().getTime();
+        logger.debug(`${fcnName} Execution time: ${endTime - startTime}ms`)
+        throw new Error(`${fcnName} ${err}`);
+    }
+
+}

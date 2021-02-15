@@ -63,10 +63,18 @@ const DOC_OBJECT_VALUE2 = {
             console.log(`Values for keys "${[DOC_OBJECT_KEY1, DOC_OBJECT_KEY2]}" is not found.`);
         }
 
-        // Get metadata for stored document by it's key
+        // Get the latest metadata for stored document by it's key
         const metadata = await qldbKVS.getMetadata(DOC_OBJECT_KEY1);
         if (metadata) {
             console.log(`Metadata for verifying document with Key "${DOC_OBJECT_KEY1}": ${JSON.stringify(metadata)}`);
+        } else {
+            console.log(`Metadata for key "${DOC_OBJECT_KEY1}" not found.`);
+        }
+
+        // Alternatively, you can get the metadata for a specific version of the document by document Id and Transaction Id that // you get from the reponse object when creating or updating it:
+        const metadataFromIds = await qldbKVS.getMetadataByDocIdAndTxId(response.documentId, response.txId);
+        if (metadataFromIds) {
+            console.log(`Metadata for verifying document with Document ID "${response.documentId}" and transaction Id ${response.txId} : ${JSON.stringify(metadataFromIds)}`);
         } else {
             console.log(`Metadata for key "${DOC_OBJECT_KEY1}" not found.`);
         }
@@ -111,4 +119,4 @@ npm run doc
 2. Binary files, uploaded with `uploadAsFile` method, are converted to base64 format and stored as a string. Maximum file size in this case is around 88 Kb. For larger files please use a service like Amazon S3 with Object Lock feature.
 
 ### Verification algorithm
-For the details on how verification algorithm works, please see this document: [VERIFICATION.md](./VERIFICATION.md)
+For the details on how verification algorithm works, please see this document: [VERIFICATION.md](./docs/VERIFICATION.md)

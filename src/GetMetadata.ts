@@ -24,7 +24,7 @@ import { blockAddressToValueHolder, getMetadataId } from './BlockAddress';
 import { log } from "./Logging";
 const logger = log.getLogger("qldb-helper");
 import { getBlobValue, valueHolderToString, Base64EncodedString, sleep, validateTableNameConstrains, validateAttributeNameConstrains } from "./Util";
-import { getRevision } from "./GetRevision";
+import { getRevision, getRevisionMetadataByDocIdAndTxId } from "./GetRevision";
 
 export interface LedgerMetadata {
     LedgerName: string
@@ -74,7 +74,7 @@ export async function lookupBlockAddressAndDocIdForKey(txn: TransactionExecutor,
 }
 
 /**
- * Verify each version of the document for the given Key.
+ * Retrieve full ledger metadata of the most recent revision of the document for the given Key.
  * @param txn The {@linkcode TransactionExecutor} for lambda execute.
  * @param ledgerName The ledger to get the digest from.
  * @param tableName The table name to query.
@@ -143,6 +143,106 @@ export async function getDocumentLedgerMetadata(
 
         // Getting revision
         const documentId: string = getMetadataId(blockAddressAndId);
+
+        logger.debug(`${fcnName} Getting document revision with the following parameters: ${JSON.stringify({
+            ledgerName: ledgerName,
+            documentId: documentId,
+            blockAddress: blockAddress,
+            digestTipAddress: digestTipAddress
+        })}`);
+
+        const revisionResponse: GetRevisionResponse = await getRevision(
+            ledgerName,
+            documentId,
+            blockAddress,
+            digestTipAddress,
+            qldbClient
+        );
+
+        const revision: dom.Value = dom.load(revisionResponse.Revision.IonText);
+        const revisionHash: Base64EncodedString = toBase64(<Uint8Array>getBlobValue(revision, "hash"));
+        const proof: ValueHolder = revisionResponse.Proof;
+        logger.debug(`${fcnName} Got back a proof: ${valueHolderToString(proof)}.`);
+
+        return {
+            LedgerName: ledgerName,
+            TableName: tableName,
+            BlockAddress: blockAddress,
+            DocumentId: documentId,
+            RevisionHash: revisionHash,
+            Proof: proof,
+            LedgerDigest: digest
+        };
+    } catch (err) {
+        throw `${fcnName} ${err} `
+    }
+}
+
+/**
+ * Retrieve full ledger metadata of the most recent revision of the document for the given Key.
+ * @param txn The {@linkcode TransactionExecutor} for lambda execute.
+ * @param ledgerName The ledger to get the digest from.
+ * @param tableName The table name to query.
+ * @param keyAttributeName A keyAttributeName to query.
+ * @param keyAttributeValue The key of the given keyAttributeName.
+ * @param qldbClient The QLDB control plane client to use.
+ * @returns Promise which fulfills with void.
+ * @throws Error: When verification fails.
+ */
+export async function getDocumentLedgerMetadataByDocIdAndTxId(
+    txn: TransactionExecutor,
+    ledgerName: string,
+    tableName: string,
+    documentId: string,
+    transactionId: string,
+    qldbClient: QLDB
+): Promise<LedgerMetadata> {
+    const fcnName = "[GetRevision getDocumentLedgerMetadataByDocIdAndTxId]";
+
+    try {
+        logger.debug(`${fcnName} Getting metadata for document with documentId = ${documentId} and transactionId = ${transactionId}, in ledger = ${ledgerName} and table = ${tableName}.`);
+
+        // Getting Block Address and Document Id for the document
+        logger.debug(`${fcnName} Getting revision metadata for the document`);
+        const revisionMetadata: dom.Value = await getRevisionMetadataByDocIdAndTxId(txn, tableName, documentId, transactionId);
+
+        logger.debug(`${fcnName} Received metadata ${revisionMetadata}`);
+        if (!revisionMetadata) {
+            throw `Can't find revision metadata for documentId = ${documentId} and transactionId = ${transactionId}`
+        }
+        //const blockAddressAndId = blockAddressAndIdList[blockAddressAndIdList.length - 1]
+        const blockAddress: ValueHolder = blockAddressToValueHolder(revisionMetadata);
+
+        logger.debug(`${fcnName} Getting a proof for the document.`);
+
+        // Requesting ledger digest
+        logger.debug(`${fcnName} Requesting ledger digest`);
+        let ledgerDigest = await getLedgerDigest(ledgerName, qldbClient);
+
+        // Checking if digest sequenceNo has caught up with block sequenceNo
+        const digestTipAddressSeqNo = dom.load(ledgerDigest.DigestTipAddress.IonText).get("sequenceNo");
+        const blockAddressSeqNo = dom.load(blockAddress.IonText).get("sequenceNo");
+        if (digestTipAddressSeqNo < blockAddressSeqNo) {
+            logger.debug(`${fcnName} The ledger digest sequenceNo is behind the block sequenceNo, so retrying after 100 ms`);
+            await sleep(100);
+            ledgerDigest = await getLedgerDigest(ledgerName, qldbClient);
+        }
+
+        const digestBase64: Base64EncodedString = toBase64(<Uint8Array>ledgerDigest.Digest);
+
+        const digest: LedgerDigest = {
+            Digest: digestBase64,
+            DigestTipAddress: ledgerDigest.DigestTipAddress
+        }
+
+        logger.debug(`${fcnName} Got Ledger Digest: ${JSON.stringify(digest)} `)
+
+        // Converting digest from default buffer array to base64 format
+        const digestTipAddress: ValueHolder = digest.DigestTipAddress;
+
+        logger.debug(`${fcnName} Got a ledger digest: digest tip address = ${valueHolderToString(digestTipAddress)}, \n digest = ${digest.Digest}.`);
+
+        // Getting revision
 
         logger.debug(`${fcnName} Getting document revision with the following parameters: ${JSON.stringify({
             ledgerName: ledgerName,

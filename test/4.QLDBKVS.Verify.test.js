@@ -25,6 +25,8 @@ const constants = require("./QLDBKVS.Constants");
 describe('9.QLDBKVS.Verify.test', () => {
     let qldbKVS;
     let ledgerMetadata;
+    let updateResponse;
+    let ledgerMetadataByTxId;
     it('Test QLDB Helper constructor', async () => {
         qldbKVS = new QLDBKVS(constants.LEDGER_NAME, constants.TABLE_NAME);
     });
@@ -37,13 +39,21 @@ describe('9.QLDBKVS.Verify.test', () => {
         ledgerMetadata = JSON.parse(JSON.stringify(res));
     }).timeout(30000);
 
-    it('Updating String to change Metadata in Ledger', async () => {
-        const res = await qldbKVS.setValue(constants.DOC_STRING_KEY, constants.DOC_STRING_VALUE);
-        console.log(`[TEST LOGS]Updating String to change Metadata in Ledger. Doc ID: ${JSON.stringify(res)}`)
-        assert.ok(res);
+    it('Updating String to change Metadata in Ledger and retrieving metadata by document id and transaction id and Retrieving metadata by document id and transaction id for the recent update', async () => {
+        updateResponse = await qldbKVS.setValue(constants.DOC_STRING_KEY, constants.DOC_STRING_VALUE);
+        console.log(`[TEST LOGS]Updating String to change Metadata in Ledger. Response: ${JSON.stringify(updateResponse)}`)
+        console.log(`[TEST LOGS]Retrieving metadata by: ${JSON.stringify(updateResponse)}`)
+        ledgerMetadataByTxId = qldbKVS.getMetadataByDocIdAndTxId(updateResponse.documentId, updateResponse.txId);
+        assert.ok(ledgerMetadataByTxId);
     }).timeout(30000);
 
-    it('Test verifyMetadata', async () => {
+    it('Test verifyMetadata for metadata before update', async () => {
+        const res = await qldbKVS.verifyMetadata(ledgerMetadata);
+        console.log(`[TEST LOGS]Test verifyMetadata: ${JSON.stringify(res)}`)
+        assert.ok(res);
+    }).timeout(8000);
+
+    it('Test verifyMetadata for metadata after update', async () => {
         const res = await qldbKVS.verifyMetadata(ledgerMetadata);
         console.log(`[TEST LOGS]Test verifyMetadata: ${JSON.stringify(res)}`)
         assert.ok(res);

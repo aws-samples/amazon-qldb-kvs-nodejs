@@ -15,7 +15,8 @@
  */
 
 import { TransactionExecutor, Result } from "amazon-qldb-driver-nodejs";
-import { getDocumentIds, validateTableNameConstrains } from "./Util";
+import { validateTableNameConstrains } from "./Util";
+import { getDocumentIds } from "./GetDocument";
 import { dom } from "ion-js";
 import { log } from "./Logging";
 import { ValueHolder } from "aws-sdk/clients/qldbsession";

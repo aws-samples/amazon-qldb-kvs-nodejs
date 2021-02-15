@@ -1,6 +1,6 @@
 let constants = {
     LEDGER_NAME: "vehicle-registration",
-    TABLE_NAME: "TestKVS1",
+    TABLE_NAME: "TestKVS",
     // File test
     IN_FILE_PATH: "./test/testfile.txt",
     OUT_FILE_PATH: "./test/testfile.txt",
