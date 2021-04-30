@@ -22,7 +22,7 @@ const constants = require("./QLDBKVS.Constants");
  * This is an example for retrieving the digest of a particular ledger.
  * @returns Promise which fulfills with void.
  */
-describe('9.QLDBKVS.Verify.test', () => {
+describe('4.QLDBKVS.Verify.test', () => {
     let qldbKVS;
     let ledgerMetadata;
     let updateResponse;
@@ -43,7 +43,7 @@ describe('9.QLDBKVS.Verify.test', () => {
         updateResponse = await qldbKVS.setValue(constants.DOC_STRING_KEY, constants.DOC_STRING_VALUE);
         console.log(`[TEST LOGS]Updating String to change Metadata in Ledger. Response: ${JSON.stringify(updateResponse)}`)
         console.log(`[TEST LOGS]Retrieving metadata by: ${JSON.stringify(updateResponse)}`)
-        ledgerMetadataByTxId = qldbKVS.getMetadataByDocIdAndTxId(updateResponse.documentId, updateResponse.txId);
+        ledgerMetadataByTxId = await qldbKVS.getMetadataByDocIdAndTxId(updateResponse[0].documentId, updateResponse[0].txId);
         assert.ok(ledgerMetadataByTxId);
     }).timeout(30000);
 

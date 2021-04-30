@@ -45,6 +45,15 @@ const DOC_OBJECT_VALUE2 = {
             console.log(`Could not set value for key "${DOC_OBJECT_KEY1}"`);
         }
 
+        // Put up to 10 JSON documents as a stringified value for a respective key
+        const responses = await qldbKVS.setValues([DOC_OBJECT_KEY1, DOC_OBJECT_KEY2], [DOC_OBJECT_VALUE1, DOC_OBJECT_VALUE2]);
+
+        if (responses) {
+            console.log(`Internal document Id from the Ledger, returned by setValues: ${JSON.stringify(responses)}`);
+        } else {
+            console.log(`Could not set value for keys "[${DOC_OBJECT_KEY1}, ${DOC_OBJECT_KEY2}]"`);
+        }
+
         // Get value for key "/myAppConfigPrefix/config"
         const valueFromLedger = await qldbKVS.getValue(DOC_OBJECT_KEY1);
 

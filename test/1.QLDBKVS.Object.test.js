@@ -22,7 +22,7 @@ const constants = require("./QLDBKVS.Constants");
  * This is an example for retrieving the digest of a particular ledger.
  * @returns Promise which fulfills with void.
  */
-describe('6.QLDBKVS.Object.test', () => {
+describe('1.QLDBKVS.Object.test', () => {
     let qldbKVS;
     it('Test QLDB Helper constructor', async () => {
         qldbKVS = new QLDBKVS(constants.LEDGER_NAME, constants.TABLE_NAME);

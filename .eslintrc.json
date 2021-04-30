@@ -36,6 +36,7 @@
             {
               "ignoreParameters": true
             }
-        ]
+        ],
+        "sonarjs/cognitive-complexity": ["error", 19]
     }
 }

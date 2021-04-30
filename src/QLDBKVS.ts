@@ -28,6 +28,7 @@ import { log } from "./Logging";
 import { createQldbDriver } from "./ConnectToLedger"
 
 import { VALUE_ATTRIBUTE_NAME, KEY_ATTRIBUTE_NAME, DEFAULT_DOWNLOADS_PATH, MAX_QLDB_DOCUMENT_SIZE } from "./Constants";
+import { promises } from "dns";
 
 
 const qldbClient: QLDB = new QLDB();
@@ -41,8 +42,6 @@ const writeFile: any = Util.promisify(fs.writeFile);
 const readFile: any = Util.promisify(fs.readFile);
 // Waiting for table creation for 30 seconds before throwing an error
 const TABLE_CREATION_MAX_WAIT = 30000
-
-let ledgersConnected: Map<string, QldbDriver> = new Map<string, QldbDriver>();
 
 export class QLDBKVS {
     qldbDriver: QldbDriver;
@@ -74,17 +73,11 @@ export class QLDBKVS {
 
             logger.debug(`${fcnName} Creating QLDB driver`);
 
-            if (!ledgersConnected.has(ledgerName)) {
-                this.qldbDriver = createQldbDriver(ledgerName);
-                ledgersConnected.set(ledgerName, this.qldbDriver);
-            } else {
-                logger.info(`Driver for ledger "${ledgerName}" already exists. Re-using it.`);
-                this.qldbDriver = ledgersConnected.get(ledgerName);
-            }
+            this.qldbDriver = createQldbDriver(ledgerName);
 
             logger.debug(`${fcnName} QLDB driver created`);
 
-            this.tableState = "NOT_EXIST";
+            this.tableState = "CHECKING";
             // Making sure the table exists and set it for creation 
             // next time somebody will decide to submit a new document to QLDB
             (async () => {
@@ -98,6 +91,8 @@ export class QLDBKVS {
                 logger.info(`${fcnName} Checking if table with name ${tableName} exists`);
                 if (tableNames.indexOf(tableName.toUpperCase()) >= 0) {
                     this.tableState = "EXIST";
+                } else {
+                    this.tableState = "NOT_EXIST";
                 }
             })();
         } catch (err) {
@@ -198,7 +193,7 @@ export class QLDBKVS {
             logger.debug(`${fcnName} Length of an object is ${documentObjectSize}`);
 
             // In case our table has not been created yet, waiting for it to be created
-            if (this.tableState === "CREATING") {
+            if (this.tableState === "CREATING" || this.tableState === "CHECKING") {
                 let cycles = TABLE_CREATION_MAX_WAIT / 100;
                 logger.debug(`${fcnName} Table with name ${tableName} still does not exist, waiting for it to be created.`)
                 do {
@@ -207,7 +202,7 @@ export class QLDBKVS {
                     if (cycles === 0) {
                         throw new Error(`Could not create a table with name ${tableName} in ${TABLE_CREATION_MAX_WAIT} milliseconds`)
                     }
-                } while (this.tableState === "CREATING");
+                } while (this.tableState === "CREATING" || this.tableState === "CHECKING");
             }
             if (this.tableState === "NOT_EXIST") {
                 this.tableState = "CREATING"
@@ -347,9 +342,6 @@ export class QLDBKVS {
     async setValue(key: string, value: any): Promise<UpsertResult> {
         const fcnName = "[QLDBKVS.setValue]";
         const self: QLDBKVS = this;
-        const ledgerName: string = self.ledgerName;
-        const tableName: string = self.tableName;
-        const paramId: string = key;
         const startTime: number = new Date().getTime();
 
         try {
@@ -360,24 +352,68 @@ export class QLDBKVS {
                 throw new Error(`${fcnName}: Please specify a value`);
             }
 
-            let valueAsString = value;
+            const upsertResult = await this.setValues([key], [value]);
+            return upsertResult[0];
 
-            if (typeof value !== "string") {
-                try {
-                    valueAsString = JSON.stringify(value);
-                } catch (err) {
-                    throw new Error(`${fcnName} Could not parse submitted value [${value}] to JSON: ${err}`);
-                }
+        } catch (err) {
+            const msg = `${fcnName} Could not set the value: ${err}`;
+            logger.error(msg);
+            throw new Error(msg);
+        } finally {
+            const endTime: number = new Date().getTime();
+            logger.debug(`${fcnName} Execution time: ${endTime - startTime}ms`)
+        }
+
+    }
+
+    /**
+ * Put a JSON object to QLDB as a key/value record
+ * @param keys String[] An array of key attributes to save the records with.
+ * @param values any [] An array of values of a value attributes to save the records with. If they are not a string, they will be stringified before submitting to the ledger.
+ * @returns A promise with an object containing a document Id and transaction Id
+ */
+    async setValues(keys: string[], values: any[]): Promise<UpsertResult[]> {
+        const fcnName = "[QLDBKVS.setValues]";
+        const self: QLDBKVS = this;
+        const ledgerName: string = self.ledgerName;
+        const tableName: string = self.tableName;
+        const startTime: number = new Date().getTime();
+
+        try {
+            if (keys.length < 1) {
+                throw new Error(`${fcnName}: Please specify at least one key`);
+            }
+            if (keys.length > 10) {
+                throw new Error(`${fcnName}: Sorry, we can't submit more than 32 values at a time`);
+            }
+            if (values.length < 1) {
+                throw new Error(`${fcnName}: Please specify at least one value`);
+            }
+            if (keys.length !== values.length) {
+                throw new Error(`${fcnName}: Please make sure the number of keys equals the number of values`);
             }
 
-            let document: { [k: string]: any } = {};
-            document[KEY_ATTRIBUTE_NAME] = key
-            document[VALUE_ATTRIBUTE_NAME] = valueAsString
+            const documentsArray: { [k: string]: any }[] = keys.map((key, index) => {
+                let valueAsString = values[index];
 
-            logger.debug(`${fcnName} Setting value of ${paramId} from ledger ${ledgerName} and table ${tableName} as utf8 encoded stringified JSON object.`);
+                if (typeof values[index] !== "string") {
+                    try {
+                        valueAsString = JSON.stringify(values[index]);
+                    } catch (err) {
+                        throw new Error(`${fcnName} Could not parse submitted value [${values[index]}] to JSON: ${err}`);
+                    }
+                }
+
+                let document: { [k: string]: any } = {};
+                document[KEY_ATTRIBUTE_NAME] = key
+                document[VALUE_ATTRIBUTE_NAME] = valueAsString
+
+                logger.debug(`${fcnName} Setting value of ${key} from ledger ${ledgerName} and table ${tableName} as utf8 encoded stringified JSON object.`);
+                return document
+            })
 
             // In case our table has not been created yet, waiting for it to be created
-            if (this.tableState === "CREATING") {
+            if (this.tableState === "CREATING" || this.tableState === "CHECKING") {
                 let cycles = TABLE_CREATION_MAX_WAIT / 100;
                 logger.debug(`${fcnName} Table with name ${tableName} still does not exist, waiting for it to be created.`)
                 do {
@@ -386,7 +422,7 @@ export class QLDBKVS {
                     if (cycles === 0) {
                         throw new Error(`Could not create a table with name ${tableName} in ${TABLE_CREATION_MAX_WAIT} milliseconds`)
                     }
-                } while (this.tableState === "CREATING");
+                } while (this.tableState === "CREATING" || this.tableState === "CHECKING");
             }
 
             if (this.tableState === "NOT_EXIST") {
@@ -396,12 +432,13 @@ export class QLDBKVS {
                 this.tableState = "EXIST";
             }
 
-            const upsertResult: UpsertResult[] = await this.qldbDriver.executeLambda(async (txn: TransactionExecutor) => {
-                return await upsert(txn, tableName, KEY_ATTRIBUTE_NAME, document).catch((err) => {
-                    throw err
-                });
+            return await this.qldbDriver.executeLambda(async (txn: TransactionExecutor) => {
+                return await Promise.all(documentsArray.map((document) => {
+                    return upsert(txn, tableName, KEY_ATTRIBUTE_NAME, document).catch((err) => {
+                        throw err
+                    });
+                }));
             })
-            return upsertResult[0];
 
         } catch (err) {
             const msg = `${fcnName} Could not set the value: ${err}`;
