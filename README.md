@@ -14,6 +14,12 @@ A simple Key-Value store interface library for Amazon Quantum Ledger Database (Q
 2. Configure your [AWS NodeJS SDK](https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/configuring-the-jssdk.html)
 3. For making changes to the library and testing please also install [TypeScript](https://www.typescriptlang.org/index.html#download-links).
 
+### Installation
+
+```bash
+npm install --save amazon-qldb-kvs-nodejs
+```
+
 ### Usage
 
 ``` Javascript
@@ -64,15 +70,15 @@ const DOC_OBJECT_VALUE2 = {
         }
 
         // Get values for multiple keys "/myAppConfigPrefix/config". Current limit is up to 32 keys at a time to avoid hitting QLDB limits.
-        const valueFromLedger = await qldbKVS.getValues([DOC_OBJECT_KEY1, DOC_OBJECT_KEY2]);
+        const valuesFromLedger = await qldbKVS.getValues([DOC_OBJECT_KEY1, DOC_OBJECT_KEY2]);
 
-        if (valueFromLedger) {
-            console.log(`Value from Ledger: ${JSON.stringify(valueFromLedger)}`);
+        if (valuesFromLedger) {
+            console.log(`Value from Ledger: ${JSON.stringify(valuesFromLedger)}`);
         } else {
             console.log(`Values for keys "${[DOC_OBJECT_KEY1, DOC_OBJECT_KEY2]}" is not found.`);
         }
 
-        // Get the latest metadata for stored document by it's key
+        // Get the latest metadata for stored document by its key
         const metadata = await qldbKVS.getMetadata(DOC_OBJECT_KEY1);
         if (metadata) {
             console.log(`Metadata for verifying document with Key "${DOC_OBJECT_KEY1}": ${JSON.stringify(metadata)}`);
@@ -80,8 +86,8 @@ const DOC_OBJECT_VALUE2 = {
             console.log(`Metadata for key "${DOC_OBJECT_KEY1}" not found.`);
         }
 
-        // Alternatively, you can get the metadata for a specific version of the document by document Id and Transaction Id that // you get from the reponse object when creating or updating it:
-        const metadataFromIds = await qldbKVS.getMetadataByDocIdAndTxId(response.documentId, response.txId);
+        // Alternatively, you can get the metadata for a specific version of the document by document Id and Transaction Id that // you get from the response object when creating or updating it:
+        const metadataFromIds = await qldbKVS.getMetadataByDocIdAndTxId(response[0].documentId, response[0].txId);
         if (metadataFromIds) {
             console.log(`Metadata for verifying document with Document ID "${response.documentId}" and transaction Id ${response.txId} : ${JSON.stringify(metadataFromIds)}`);
         } else {
@@ -106,7 +112,7 @@ const DOC_OBJECT_VALUE2 = {
     } catch (err) {
         console.error(`Error: ${err}`);
     }
-})()
+})();
 ```
 
 ### Running unit tests
