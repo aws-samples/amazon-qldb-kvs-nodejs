@@ -27,8 +27,9 @@ describe('4.QLDBKVS.Verify.test', () => {
     let ledgerMetadata;
     let updateResponse;
     let ledgerMetadataByTxId;
+    let documentHistory;
     it('Test QLDB Helper constructor', async () => {
-        qldbKVS = new QLDBKVS(constants.LEDGER_NAME, constants.TABLE_NAME);
+        qldbKVS = new QLDBKVS(constants.LEDGER_NAME, constants.TABLE_NAME, false);
     });
 
     it('Test getMetadata', async () => {
@@ -43,7 +44,7 @@ describe('4.QLDBKVS.Verify.test', () => {
         updateResponse = await qldbKVS.setValue(constants.DOC_STRING_KEY, constants.DOC_STRING_VALUE);
         console.log(`[TEST LOGS]Updating String to change Metadata in Ledger. Response: ${JSON.stringify(updateResponse)}`)
         console.log(`[TEST LOGS]Retrieving metadata by: ${JSON.stringify(updateResponse)}`)
-        ledgerMetadataByTxId = await qldbKVS.getMetadataByDocIdAndTxId(updateResponse[0].documentId, updateResponse[0].txId);
+        ledgerMetadataByTxId = await qldbKVS.getMetadataByDocIdAndTxId(updateResponse.documentId, updateResponse.txId);
         assert.ok(ledgerMetadataByTxId);
     }).timeout(30000);
 
@@ -64,7 +65,15 @@ describe('4.QLDBKVS.Verify.test', () => {
         console.log(`[TEST LOGS]Test getHistory: ${JSON.stringify(res)}`)
         assert.ok(res[0]);
         // Making sure we convert ledgerMetadata from text
-        ledgerMetadata = JSON.parse(JSON.stringify(res));
+        documentHistory = JSON.parse(JSON.stringify(res));
+    }).timeout(8000);
+
+    it('Test getDocumentRevisionByMetadata', async () => {
+        const res = await qldbKVS.getDocumentRevisionByMetadata(ledgerMetadata);
+        console.log(`[TEST LOGS]Test getDocumentRevisionByMetadata: ${JSON.stringify(res)}`)
+        assert.ok(res);
+        // Making sure we convert ledgerMetadata from text
+        ledgerRevision = JSON.parse(JSON.stringify(res));
     }).timeout(8000);
 
 });

@@ -40,7 +40,8 @@ const DOC_OBJECT_VALUE2 = {
 (async () => {
     try {
         // Pre-configuring KVS interface with Ledger name and Table name that we will use for our Key-value storage
-        const qldbKVS = new QLDBKVS(LEDGER_NAME, TABLE_NAME);
+        // We also instruct the library to check if table exists and create a new one if it doesn't 
+        const qldbKVS = new QLDBKVS(LEDGER_NAME, TABLE_NAME, true);
 
         // Put a JSON document as a stringified value for a respective key
         const response = await qldbKVS.setValue(DOC_OBJECT_KEY1, DOC_OBJECT_VALUE1);

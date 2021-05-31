@@ -17,9 +17,10 @@
 import { QldbDriver, TransactionExecutor, Result } from "amazon-qldb-driver-nodejs";
 import { QLDB } from "aws-sdk";
 import { createTableWithIndex, listTables } from "./QLDBHelper";
-import { getDocumentIds, getByKeyAttribute, getByKeyAttributes } from "./GetDocument"
+import { getByKeyAttribute, getByKeyAttributes } from "./GetDocument"
 import { getLedgerDigest } from './GetDigest';
 import { getDocumentLedgerMetadata, getDocumentLedgerMetadataByDocIdAndTxId, LedgerMetadata } from "./GetMetadata"
+import { getRevision } from "./GetRevision"
 import { upsert, UpsertResult } from "./UpsertDocument"
 import { getDocumentHistory } from "./GetDocumentHistory"
 import { verifyDocumentMetadataWithUserData } from "./VerifyDocument"
@@ -28,8 +29,7 @@ import { log } from "./Logging";
 import { createQldbDriver } from "./ConnectToLedger"
 
 import { VALUE_ATTRIBUTE_NAME, KEY_ATTRIBUTE_NAME, DEFAULT_DOWNLOADS_PATH, MAX_QLDB_DOCUMENT_SIZE } from "./Constants";
-import { promises } from "dns";
-
+import { GetRevisionResponse } from "aws-sdk/clients/qldb";
 
 const qldbClient: QLDB = new QLDB();
 const fs = require('fs');
@@ -53,9 +53,10 @@ export class QLDBKVS {
      * Initialize QLDBKVS object
      * @param ledgerName A name of QLDB ledger to use
      * @param tableName A name of QLDB table
+     * @param checkForTable A boolean value to check table if table exists and create if it is not exests (dafault=true)
      * @returns {QLDBKVS} initialized
      */
-    constructor(ledgerName: string, tableName: string) {
+    constructor(ledgerName: string, tableName: string, checkForTable?: boolean) {
         const fcnName = "[QLDBKVS.constructor]";
         try {
             if (!ledgerName) {
@@ -64,6 +65,8 @@ export class QLDBKVS {
             if (!tableName) {
                 throw new Error(`${fcnName}: Please specify tableName, which is the name of a table you are planning to use`);
             }
+
+            const checkForTableAndCreate = typeof checkForTable == "boolean" ? checkForTable : true;
 
             validateLedgerNameConstrains(ledgerName);
             validateTableNameConstrains(tableName);
@@ -77,24 +80,29 @@ export class QLDBKVS {
 
             logger.debug(`${fcnName} QLDB driver created`);
 
-            this.tableState = "CHECKING";
-            // Making sure the table exists and set it for creation 
-            // next time somebody will decide to submit a new document to QLDB
-            (async () => {
+            if (checkForTableAndCreate) {
 
-                //// Listing tables names
-                logger.info(`${fcnName} Listing table names...`);
-                let tableNames: string[] = await listTables(this.qldbDriver);
-                tableNames = tableNames.map(x => { return x.toUpperCase() });
+                this.tableState = "CHECKING";
+                // Making sure the table exists and set it for creation 
+                // next time somebody will decide to submit a new document to QLDB
+                (async () => {
 
-                //// Checking if table is already created and create if not
-                logger.info(`${fcnName} Checking if table with name ${tableName} exists`);
-                if (tableNames.indexOf(tableName.toUpperCase()) >= 0) {
-                    this.tableState = "EXIST";
-                } else {
-                    this.tableState = "NOT_EXIST";
-                }
-            })();
+                    //// Listing tables names
+                    logger.info(`${fcnName} Listing table names...`);
+                    let tableNames: string[] = await listTables(this.qldbDriver);
+                    tableNames = tableNames.map(x => { return x.toUpperCase() });
+
+                    //// Checking if table is already created and create if not
+                    logger.info(`${fcnName} Checking if table with name ${tableName} exists`);
+                    if (tableNames.indexOf(tableName.toUpperCase()) >= 0) {
+                        this.tableState = "EXIST";
+                    } else {
+                        this.tableState = "NOT_EXIST";
+                    }
+                })();
+            } else {
+                this.tableState = "EXIST";
+            }
         } catch (err) {
             throw new Error(`${fcnName} ${err}`)
         }
@@ -210,12 +218,11 @@ export class QLDBKVS {
                 await createTableWithIndex(this.qldbDriver, tableName, KEY_ATTRIBUTE_NAME);
                 this.tableState = "EXIST";
             }
-            const upsertResult: UpsertResult[] = await this.qldbDriver.executeLambda(async (txn: TransactionExecutor) => {
+            return await this.qldbDriver.executeLambda(async (txn: TransactionExecutor) => {
                 return await upsert(txn, tableName, KEY_ATTRIBUTE_NAME, doc).catch((err) => {
                     throw err
                 });
             })
-            return upsertResult[0];
         } catch (err) {
             const msg = `${fcnName} Could not upload the file: ${err}`;
             logger.error(msg);
@@ -603,6 +610,37 @@ export class QLDBKVS {
             logger.debug(`${fcnName} Execution time: ${endTime - startTime}ms`)
         }
     }
+
+    /**
+     * Get document revision by metadata
+     * @param {LedgerMetadata}  ledgerMetadata is an object that holds ledger metadata returned by function "getMetadata(key)"
+     * @returns Promise with a boolean
+     */
+    async getDocumentRevisionByMetadata(ledgerMetadata: LedgerMetadata): Promise<GetRevisionResponse> {
+        const fcnName = "[QLDBKVS.getDocumentRevisionByMetadata]";
+        const self: QLDBKVS = this;
+        const ledgerName: string = self.ledgerName;
+        const startTime: number = new Date().getTime();
+        try {
+
+            logger.debug(`${fcnName} Retrieving document revision by metadata ${ledgerMetadata.DocumentId} from ledger ${ledgerName}`);
+
+            return await getRevision(ledgerName,
+                ledgerMetadata.DocumentId,
+                ledgerMetadata.BlockAddress,
+                ledgerMetadata.LedgerDigest.DigestTipAddress,
+                qldbClient)
+
+        } catch (err) {
+            const msg = `${fcnName} Requested record does not exist: ${err}`;
+            logger.error(msg);
+            throw new Error(msg);
+        } finally {
+            const endTime: number = new Date().getTime();
+            logger.debug(`${fcnName} Execution time: ${endTime - startTime}ms`)
+        }
+    }
+
     /**
      * Gets the most recent ledger digest.
      * @returns A JSON document with ledger digest.

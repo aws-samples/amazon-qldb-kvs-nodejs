@@ -34,7 +34,7 @@ export class UpsertResult {
 * @returns A number of changes made to the ledger.
 * @throws Error: If error happen during the process.
 */
-export async function upsert(txn: TransactionExecutor, tableName: string, keyAttributeName: string, documentJSON: object): Promise<UpsertResult[]> {
+export async function upsert(txn: TransactionExecutor, tableName: string, keyAttributeName: string, documentJSON: object): Promise<UpsertResult> {
     const fcnName = "[UpsertDocument.upsert]"
     const startTime: number = new Date().getTime();
     const txId = txn.getTransactionId();
@@ -87,12 +87,13 @@ export async function upsert(txn: TransactionExecutor, tableName: string, keyAtt
 
         logger.info(`${fcnName} Document with key "${documentJSONKeyValue}" is added to the table with name "${tableName}"`);
         logger.debug(`${fcnName} Returned results list: ${result.getResultList()}`);
-        return result.getResultList().map((returnObject) => {
+        const finalResult: UpsertResult[] = result.getResultList().map((returnObject) => {
             return {
                 documentId: returnObject.get("documentId").stringValue(),
                 txId: txId
             }
         });
+        return finalResult[0];
     } catch (err) {
         throw `${fcnName} ${err}`;
     } finally {
