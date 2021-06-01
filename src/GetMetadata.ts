@@ -104,7 +104,7 @@ export async function getDocumentLedgerMetadata(
 
         logger.debug(`${fcnName} Received ${blockAddressAndIdList.length} Block Address and Document Id combination.`);
         if (!blockAddressAndIdList.length) {
-            throw `Can't find block address and document id associated with "${keyAttributeName}" = ${keyAttributeValue}`
+            throw `Unable to find block address and document id associated with "${keyAttributeName}" = ${keyAttributeValue}`
         }
         const blockAddressAndId = blockAddressAndIdList[blockAddressAndIdList.length - 1]
         const blockAddress: ValueHolder = blockAddressToValueHolder(blockAddressAndId);
@@ -208,7 +208,7 @@ export async function getDocumentLedgerMetadataByDocIdAndTxId(
 
         logger.debug(`${fcnName} Received metadata ${revisionMetadata}`);
         if (!revisionMetadata) {
-            throw `Can't find revision metadata for documentId = ${documentId} and transactionId = ${transactionId}`
+            throw `Unable to find revision metadata for documentId = ${documentId} and transactionId = ${transactionId}`
         }
         //const blockAddressAndId = blockAddressAndIdList[blockAddressAndIdList.length - 1]
         const blockAddress: ValueHolder = blockAddressToValueHolder(revisionMetadata);

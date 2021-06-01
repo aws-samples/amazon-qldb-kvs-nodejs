@@ -141,7 +141,7 @@ export class QLDBKVS {
 
             const resultION = await this.qldbDriver.executeLambda(async (txn: TransactionExecutor) => {
                 return await getByKeyAttribute(txn, tableName, KEY_ATTRIBUTE_NAME, paramId).catch((err) => {
-                    throw `Couldn't get file By Key Attribute: ${err}`;
+                    throw `Unable to get file By Key Attribute: ${err}`;
                 });
             });
 
@@ -195,7 +195,7 @@ export class QLDBKVS {
             const documentObjectSize: number = doc[KEY_ATTRIBUTE_NAME].length + doc[VALUE_ATTRIBUTE_NAME].length;
 
             if (documentObjectSize > MAX_QLDB_DOCUMENT_SIZE) {
-                logger.info(`${fcnName} Can't upload files larger than ${MAX_QLDB_DOCUMENT_SIZE} bytes. Current size: ${documentObjectSize}`);
+                logger.info(`${fcnName} Unable to upload files larger than ${MAX_QLDB_DOCUMENT_SIZE} bytes. Current size: ${documentObjectSize}`);
                 return null;
             }
             logger.debug(`${fcnName} Length of an object is ${documentObjectSize}`);
@@ -214,7 +214,7 @@ export class QLDBKVS {
             }
             if (this.tableState === "NOT_EXIST") {
                 this.tableState = "CREATING"
-                logger.info(`${fcnName} Looks like a table with name ${tableName} doesn't exist. Creating it and re-trying file upload.`)
+                logger.info(`${fcnName} Looks like a table with name ${tableName} does not exist. Creating it and re-trying file upload.`)
                 await createTableWithIndex(this.qldbDriver, tableName, KEY_ATTRIBUTE_NAME);
                 this.tableState = "EXIST";
             }
@@ -255,7 +255,7 @@ export class QLDBKVS {
 
             const resultION = await this.qldbDriver.executeLambda(async (txn: TransactionExecutor) => {
                 return await getByKeyAttribute(txn, tableName, KEY_ATTRIBUTE_NAME, paramId).catch((err) => {
-                    throw `Couldn't get object By Key Attribute: ${err}`;
+                    throw `Unable to get object By Key Attribute: ${err}`;
                 });
             })
 
@@ -305,7 +305,7 @@ export class QLDBKVS {
 
             const resultION = await this.qldbDriver.executeLambda(async (txn: TransactionExecutor) => {
                 return await getByKeyAttributes(txn, tableName, KEY_ATTRIBUTE_NAME, paramIds).catch((err) => {
-                    throw `Couldn't getByKeyAttributes: ${err}`;
+                    throw `Unable to get key by attributes: ${err}`;
                 });
             });
 
@@ -391,7 +391,7 @@ export class QLDBKVS {
                 throw new Error(`${fcnName}: Please specify at least one key`);
             }
             if (keys.length > 10) {
-                throw new Error(`${fcnName}: Sorry, we can't submit more than 32 values at a time`);
+                throw new Error(`${fcnName}: Unable to submit more than 10 values at a time`);
             }
             if (values.length < 1) {
                 throw new Error(`${fcnName}: Please specify at least one value`);
@@ -434,7 +434,7 @@ export class QLDBKVS {
 
             if (this.tableState === "NOT_EXIST") {
                 this.tableState = "CREATING"
-                logger.info(`${fcnName} Looks like a table with name ${tableName} doesn't exist. Creating it and re-trying file upload.`)
+                logger.info(`${fcnName} Looks like a table with name ${tableName} does not exist. Creating it and re-trying file upload.`)
                 await createTableWithIndex(this.qldbDriver, tableName, KEY_ATTRIBUTE_NAME);
                 this.tableState = "EXIST";
             }
