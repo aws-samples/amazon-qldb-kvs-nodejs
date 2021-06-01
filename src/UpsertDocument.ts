@@ -51,7 +51,7 @@ export async function upsert(txn: TransactionExecutor, tableName: string, keyAtt
         try {
             docIds = await getDocumentIds(txn, tableName, keyAttributeName, documentJSONKeyValue);
         } catch (err) {
-            logger.debug(`${fcnName} Didn't find a doc. So assuming we are inserting a new doc.`);
+            logger.debug(`${fcnName} Unable to find a document. So assuming we are inserting a new document.`);
         }
 
         // If multiple, return an error

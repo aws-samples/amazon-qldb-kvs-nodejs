@@ -95,7 +95,7 @@ export async function getByKeyAttributes(txn: TransactionExecutor, tableName: st
         validateAttributeNameConstrains(keyAttributeName);
         const query = `SELECT * FROM ${tableName} AS d BY id  WHERE d.${keyAttributeName} IN ${getBindParametersString(keyAttributeValues.length)}`;
 
-        if (keyAttributeValues.length > MAX_KEYS_TO_RETRIEVE) throw `We should retrieve not more then ${MAX_KEYS_TO_RETRIEVE} keys at a time.`
+        if (keyAttributeValues.length > MAX_KEYS_TO_RETRIEVE) throw `Maximum number of keys (${MAX_KEYS_TO_RETRIEVE}) exceeded.`
 
         logger.debug(`${fcnName} Retrieving document values for Keys: ${keyAttributeValues}`);
         logger.debug(`${fcnName} Query statement: ${query}`);
@@ -105,7 +105,7 @@ export async function getByKeyAttributes(txn: TransactionExecutor, tableName: st
         logger.debug(`${fcnName} Execution time: ${endTime - startTime}ms`)
         const resultList: dom.Value[] = result.getResultList();
         if (resultList.length === 0) {
-            throw `${fcnName} Unable to find documents with Keys: ${keyAttributeValues}.`;
+            throw `${fcnName} Unable to find documents with keys: ${keyAttributeValues}.`;
         }
         return resultList;
     } catch (err) {
