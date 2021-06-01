@@ -28,7 +28,7 @@ describe('4.QLDBKVS.Verify.test', () => {
     let updateResponse;
     let ledgerMetadataByTxId;
     let documentHistory;
-    it('Test QLDB Helper constructor', async () => {
+    before('Test QLDB Helper constructor', async () => {
         qldbKVS = new QLDBKVS(constants.LEDGER_NAME, constants.TABLE_NAME, false);
     });
 

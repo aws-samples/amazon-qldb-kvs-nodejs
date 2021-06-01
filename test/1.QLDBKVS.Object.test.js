@@ -24,7 +24,7 @@ const constants = require("./QLDBKVS.Constants");
  */
 describe('1.QLDBKVS.Object.test', () => {
     let qldbKVS;
-    it('Test QLDB Helper constructor', async () => {
+    before('Test QLDB Helper constructor', async () => {
         qldbKVS = new QLDBKVS(constants.LEDGER_NAME, constants.TABLE_NAME);
     });
 

@@ -44,7 +44,7 @@ const _generateSampleStringsArray = (numberOfStrings, lengthOfStrings) => {
  */
 describe('2.QLDBKVS.Objects.test', () => {
     let qldbKVS;
-    it('Test QLDB Helper constructor', async () => {
+    before('Test QLDB Helper constructor', async () => {
         qldbKVS = new QLDBKVS(constants.LEDGER_NAME, constants.TABLE_NAME, false);
     });
 
