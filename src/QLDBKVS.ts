@@ -104,7 +104,9 @@ export class QLDBKVS {
                 this.tableState = "EXIST";
             }
         } catch (err) {
-            throw new Error(`${fcnName} ${err}`)
+            const msg = `Could not construct an instance of QLDB KVS class`;
+            logger.error(`${fcnName} ${msg}: ${err}`);
+            throw new Error(msg);
         }
         return this;
     }
@@ -153,8 +155,8 @@ export class QLDBKVS {
             return localFilePath;
         } catch (err) {
             //throw `${fcnName}: ${err}`;
-            const msg = `${fcnName} Requested record does not exist: ${err}`;
-            logger.error(msg);
+            const msg = `Requested document does not exist`;
+            logger.error(`${fcnName} ${msg}: ${err}`);
             throw new Error(msg);
         } finally {
             const endTime: number = new Date().getTime();
@@ -224,8 +226,8 @@ export class QLDBKVS {
                 });
             })
         } catch (err) {
-            const msg = `${fcnName} Could not upload the file: ${err}`;
-            logger.error(msg);
+            const msg = `Could not upload the file`;
+            logger.error(`${fcnName} ${msg}: ${err}`);
             throw new Error(msg);
         } finally {
             const endTime: number = new Date().getTime();
@@ -262,7 +264,7 @@ export class QLDBKVS {
             const valueObject = resultION[0].get(VALUE_ATTRIBUTE_NAME).stringValue();
 
             if (!valueObject) {
-                throw `Requested record does not exist`;
+                throw `Requested document does not exist`;
             }
 
             let returnValue;
@@ -274,8 +276,8 @@ export class QLDBKVS {
             return returnValue;
 
         } catch (err) {
-            const msg = `${fcnName} Requested record does not exist: ${err}`;
-            logger.debug(msg);
+            const msg = `Requested document does not exist`;
+            logger.error(`${fcnName} ${msg}: ${err}`);
             throw new Error(msg);
         } finally {
             const endTime: number = new Date().getTime();
@@ -312,7 +314,7 @@ export class QLDBKVS {
             logger.debug(`${fcnName} Got result: ${JSON.stringify(resultION)}`);
 
             if (!resultION) {
-                throw `Requested record does not exist`;
+                throw `Requested document does not exist`;
             }
 
             let valueObjects = new Array(resultION.length);
@@ -330,8 +332,8 @@ export class QLDBKVS {
                 }
             }
         } catch (err) {
-            const msg = `${fcnName} Requested record does not exist: ${err}`;
-            logger.debug(msg);
+            const msg = `Requested documents do not exist`;
+            logger.error(`${fcnName} ${msg}: ${err}`);
             throw new Error(msg);
         } finally {
             const endTime: number = new Date().getTime();
@@ -363,8 +365,8 @@ export class QLDBKVS {
             return upsertResult[0];
 
         } catch (err) {
-            const msg = `${fcnName} Could not set the value: ${err}`;
-            logger.error(msg);
+            const msg = `Could not set the value`;
+            logger.error(`${fcnName} ${msg}: ${err}`);
             throw new Error(msg);
         } finally {
             const endTime: number = new Date().getTime();
@@ -448,8 +450,8 @@ export class QLDBKVS {
             })
 
         } catch (err) {
-            const msg = `${fcnName} Could not set the value: ${err}`;
-            logger.error(msg);
+            const msg = `Could not set values`;
+            logger.error(`${fcnName} ${msg}: ${err}`);
             throw new Error(msg);
         } finally {
             const endTime: number = new Date().getTime();
@@ -485,14 +487,14 @@ export class QLDBKVS {
             })
 
             if (!result) {
-                throw `Requested record does not exist`;
+                throw `Requested document does not exist`;
             }
 
             return result;
 
         } catch (err) {
-            const msg = `${fcnName} Requested record does not exist: ${err}`;
-            logger.error(msg);
+            const msg = `Could not get metadata`;
+            logger.error(`${fcnName} ${msg}: ${err}`);
             throw new Error(msg);
         } finally {
             const endTime: number = new Date().getTime();
@@ -523,14 +525,14 @@ export class QLDBKVS {
             })
 
             if (!result) {
-                throw `Requested record does not exist`;
+                throw `Requested document does not exist`;
             }
 
             return result;
 
         } catch (err) {
-            const msg = `${fcnName} Requested record does not exist: ${err}`;
-            logger.error(msg);
+            const msg = `Could not get metadata`;
+            logger.error(`${fcnName} ${msg}: ${err}`);
             throw new Error(msg);
         } finally {
             const endTime: number = new Date().getTime();
@@ -564,14 +566,14 @@ export class QLDBKVS {
             })
 
             if (!result) {
-                throw `Requested record does not exist`;
+                throw `Requested document does not exist`;
             }
 
             return result;
 
         } catch (err) {
-            const msg = `${fcnName} Requested record does not exist: ${err}`;
-            logger.error(msg);
+            const msg = `Could not get history`;
+            logger.error(`${fcnName} ${msg}: ${err}`);
             throw new Error(msg);
         } finally {
             const endTime: number = new Date().getTime();
@@ -602,8 +604,8 @@ export class QLDBKVS {
             })
 
         } catch (err) {
-            const msg = `${fcnName} Requested record does not exist: ${err}`;
-            logger.error(msg);
+            const msg = `Could not verify the metadta`;
+            logger.error(`${fcnName} ${msg}: ${err}`);
             throw new Error(msg);
         } finally {
             const endTime: number = new Date().getTime();
@@ -632,8 +634,8 @@ export class QLDBKVS {
                 qldbClient)
 
         } catch (err) {
-            const msg = `${fcnName} Requested record does not exist: ${err}`;
-            logger.error(msg);
+            const msg = `Could not get document revision`;
+            logger.error(`${fcnName} ${msg}: ${err}`);
             throw new Error(msg);
         } finally {
             const endTime: number = new Date().getTime();
