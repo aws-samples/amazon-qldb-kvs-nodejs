@@ -24,12 +24,14 @@ import { getRevision } from "./GetRevision"
 import { upsert, UpsertResult } from "./UpsertDocument"
 import { getDocumentHistory } from "./GetDocumentHistory"
 import { verifyDocumentMetadataWithUserData } from "./VerifyDocument"
+import { validateRevisionHash } from "./VerifyRevisionHash"
 
 import { log } from "./Logging";
 import { createQldbDriver } from "./ConnectToLedger"
 
 import { VALUE_ATTRIBUTE_NAME, KEY_ATTRIBUTE_NAME, DEFAULT_DOWNLOADS_PATH, MAX_QLDB_DOCUMENT_SIZE } from "./Constants";
 import { GetRevisionResponse } from "aws-sdk/clients/qldb";
+import { makeReader, dom, load } from "ion-js";
 
 const qldbClient: QLDB = new QLDB();
 const fs = require('fs');
@@ -616,9 +618,9 @@ export class QLDBKVS {
     /**
      * Get document revision by metadata
      * @param {LedgerMetadata}  ledgerMetadata is an object that holds ledger metadata returned by function "getMetadata(key)"
-     * @returns Promise with a boolean
+     * @returns Document with document revision
      */
-    async getDocumentRevisionByMetadata(ledgerMetadata: LedgerMetadata): Promise<GetRevisionResponse> {
+    async getDocumentRevisionByMetadata(ledgerMetadata: LedgerMetadata): Promise<any> {
         const fcnName = "[QLDBKVS.getDocumentRevisionByMetadata]";
         const self: QLDBKVS = this;
         const ledgerName: string = self.ledgerName;
@@ -627,14 +629,35 @@ export class QLDBKVS {
 
             logger.debug(`${fcnName} Retrieving document revision by metadata ${ledgerMetadata.DocumentId} from ledger ${ledgerName}`);
 
-            return await getRevision(ledgerName,
+            const revisionResponse: GetRevisionResponse = await getRevision(ledgerName,
                 ledgerMetadata.DocumentId,
                 ledgerMetadata.BlockAddress,
                 ledgerMetadata.LedgerDigest.DigestTipAddress,
                 qldbClient)
-
+            const ionReader = makeReader(revisionResponse.Revision.IonText);
+            return load(ionReader);
         } catch (err) {
             const msg = `Could not get document revision`;
+            logger.error(`${fcnName} ${msg}: ${err}`);
+            throw new Error(msg);
+        } finally {
+            const endTime: number = new Date().getTime();
+            logger.debug(`${fcnName} Execution time: ${endTime - startTime}ms`)
+        }
+    }
+
+    /**
+     * Verify document revision hash
+     * @param {JSON}  documentRevision is an object that holds document revision returned by function "getDocumentRevisionByMetadata(ledgerMetadata)" or "getHistory(key)"
+     * @returns Document with document revision
+     */
+    verifyDocumentRevisionHash(documentRevision: any): boolean {
+        const fcnName = "[QLDBKVS.verifyDocumentRevisionHash]";
+        const startTime: number = new Date().getTime();
+        try {
+            return validateRevisionHash(documentRevision);
+        } catch (err) {
+            const msg = `Could not verify document revision hash`;
             logger.error(`${fcnName} ${msg}: ${err}`);
             throw new Error(msg);
         } finally {
@@ -649,7 +672,7 @@ export class QLDBKVS {
      * @param ledgerName A name of the ledger
      * @throws Error: If error happen during the process.
      */
-    getLedgerDigest(ledgerName: string, qldbClient: QLDB): Promise<QLDB.GetDigestResponse> {
+    async getLedgerDigest(ledgerName: string, qldbClient: QLDB): Promise<QLDB.GetDigestResponse> {
         const fcnName = "[QLDBHelper.getLedgerDigest]"
         return getLedgerDigest(ledgerName, qldbClient);
     }

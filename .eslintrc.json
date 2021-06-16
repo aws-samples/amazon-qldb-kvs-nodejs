@@ -27,6 +27,8 @@
     ],
     "rules": {
         "no-unused-vars": "off",
+        "no-prototype-builtins": "off",
+        "no-empty": "off",
         "no-constant-condition": [
             "error", { "checkLoops": false }
         ],

@@ -55,7 +55,7 @@ export async function getDocumentRevisionByIdAndBlock(txn: TransactionExecutor, 
     } catch (err) {
         const endTime: number = new Date().getTime();
         logger.debug(`${fcnName} Execution time: ${endTime - startTime}ms`)
-        throw new Error(err);
+        throw err;
     }
 }
 

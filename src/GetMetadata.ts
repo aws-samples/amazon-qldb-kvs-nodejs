@@ -54,7 +54,7 @@ export async function lookupBlockAddressAndDocIdForKey(txn: TransactionExecutor,
     keyAttributeName: string,
     keyAttributeValue: string): Promise<dom.Value[]> {
 
-    const fcnName = "[GetRevision lookupBlockAddressAndDocIdForKey]"
+    const fcnName = "[GetMetadata lookupBlockAddressAndDocIdForKey]"
     try {
         logger.debug(`${fcnName} Querying the '${tableName}' table for key ${keyAttributeName}: ${keyAttributeValue}...`);
         let resultList: dom.Value[];
@@ -68,7 +68,7 @@ export async function lookupBlockAddressAndDocIdForKey(txn: TransactionExecutor,
         resultList = result.getResultList();
         return resultList;
     } catch (err) {
-        logger.debug(`${fcnName} ${err.stack} `)
+        logger.debug(`${fcnName} ${err} `)
         throw `${fcnName} ${err} `
     }
 }
@@ -93,7 +93,7 @@ export async function getDocumentLedgerMetadata(
     qldbClient: QLDB,
     ledgerDigest?: LedgerDigest
 ): Promise<LedgerMetadata> {
-    const fcnName = "[GetRevision getDocumentLedgerMetadata]";
+    const fcnName = "[GetMetadata getDocumentLedgerMetadata]";
 
     try {
         logger.debug(`${fcnName} Getting metadata for document with "${keyAttributeName}" = ${keyAttributeValue}, in ledger = ${ledgerName}.`);
@@ -197,7 +197,7 @@ export async function getDocumentLedgerMetadataByDocIdAndTxId(
     transactionId: string,
     qldbClient: QLDB
 ): Promise<LedgerMetadata> {
-    const fcnName = "[GetRevision getDocumentLedgerMetadataByDocIdAndTxId]";
+    const fcnName = "[GetMetadata getDocumentLedgerMetadataByDocIdAndTxId]";
 
     try {
         logger.debug(`${fcnName} Getting metadata for document with documentId = ${documentId} and transactionId = ${transactionId}, in ledger = ${ledgerName} and table = ${tableName}.`);

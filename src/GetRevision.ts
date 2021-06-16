@@ -17,10 +17,30 @@
 import { Result, TransactionExecutor } from "amazon-qldb-driver-nodejs";
 import { QLDB } from "aws-sdk";
 import { GetRevisionRequest, GetRevisionResponse, ValueHolder } from "aws-sdk/clients/qldb";
+import { Base64EncodedString } from "./Util";
 import { dom } from "ion-js";
 
 import { log } from "./Logging";
 const logger = log.getLogger("qldb-helper");
+
+export interface DocumentRevision {
+    bockAddress: DocumentRevisionBlockAddress
+    hash: Base64EncodedString
+    data: ValueHolder
+    metadata: DocumentRevisionMetadata
+}
+
+export interface DocumentRevisionMetadata {
+    id: string
+    version: number
+    txTime: string
+    txId: string
+}
+
+export interface DocumentRevisionBlockAddress {
+    strandId: string
+    sequenceNo: number
+}
 
 /**
  * Get the revision data object for a specified document ID and block address.

@@ -1,0 +1,8 @@
+{
+    "Proof": {
+        "IonText": "[{{z5KvAGikvVrQKf1FR4TYVjddbCfupUhIDa2wCbgE+4c=}},{{UoO3Ad+xEqqOjAcKPtfTYIUO2SfSgk6IOOWp4TlBkZc=}},{{2kfO3ehGHc4uU7BcN6mzmYnTofH1o6iK7lnYCVsyTuQ=}},{{2kfO3ehGHc4uU7BcN6mzmYnTofH1o6iK7lnYCVsyTuQ=}},{{FsUwpYZRDG2gUtJlVImIVdTqiO1uK649wloqGsjlSwc=}},{{s7e3Qy4n1hHRXzqGJvmevXCmveImWV5tW0fAsWyTdlc=}},{{Yws1WrL2iXLcNLprkPJ0wg0VAZMRu/Q9U2Quhyps7rU=}},{{kE3olbajhnEQPlNEHR3aZnKxL09pObVCBXmSoZDTl8g=}},{{eTFtQ97QkPO2ZcAS+Zr1BLjSK/XyBAgsIgNIAF0F7Vw=}},{{YhFGNNss4F+6uKvwKS6hDXmozQrsLkUb8O35ak2nLCQ=}},{{2IILY8fP9ltADJxIw1oqC1nQNS8qNUxOPqcelibvr7k=}}]"
+    },
+    "Revision": {
+        "IonText": "{blockAddress:{strandId:\"KLXwBc1ml2A4Yjc8jbFMX3\",sequenceNo:429},hash:{{DrFztoBrWKz+mCV+BnnMfEZRwfJcD+DNLRPLc16SidY=}},data:{_key:\"myKey1\",_val:\"MyValue1\"},metadata:{id:\"5vHoYG5m0OZCsqdYCs8XLH\",version:13,txTime:2021-06-02T07:03:05.226Z,txId:\"EVaGjT4dxspC4GUhHi4DDJ\"}}"
+    }
+}

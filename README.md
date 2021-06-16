@@ -110,6 +110,23 @@ const DOC_OBJECT_VALUE2 = {
         } else {
             console.log(`History for document with Key "${DOC_OBJECT_KEY1}" is not found.`);
         }
+
+        // Getting document revision by metadata
+        const documentRevision = await qldbKVS.getDocumentRevisionByMetadata(metadata);
+        if (documentRevision) {
+            console.log(`Document revision for metadata "${JSON.stringify(metadata)}": ${JSON.stringify(documentRevision)}`);
+        } else {
+            console.log(`Document revision for metadata "${JSON.stringify(metadata)} is not found.`);
+        }
+
+        // Verifying document revision hash
+        const isValid = await qldbKVS.verifyDocumentRevisionHash(documentRevision);
+        if (isValid) {
+            console.log(`Document revision hash is valid`);
+        } else {
+            console.log(`Document revision hash is not valid`);
+        }
+
     } catch (err) {
         console.error(`Error: ${err}`);
     }
