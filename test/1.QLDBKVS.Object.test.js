@@ -15,7 +15,6 @@
  */
 
 const QLDBKVS = require("../dist/index").QLDBKVS;
-const assert = require("assert");
 const constants = require("./QLDBKVS.Constants");
 
 /**
@@ -24,33 +23,35 @@ const constants = require("./QLDBKVS.Constants");
  */
 describe('1.QLDBKVS.Object.test', () => {
     let qldbKVS;
-    before('Test QLDB Helper constructor', async () => {
+    let docVersion = 0;
+
+    beforeAll(async () => {
         qldbKVS = new QLDBKVS(constants.LEDGER_NAME, constants.TABLE_NAME);
     });
 
     it('Test setValue String', async () => {
         const res = await qldbKVS.setValue(constants.DOC_STRING_KEY, constants.DOC_STRING_VALUE);
         console.log(`[TEST LOGS]Test setValue: ${JSON.stringify(res)}`)
-        assert.ok(res);
-    }).timeout(30000);
+        expect(res).toBeTruthy();
+    }, 30000);
 
     it('Test setValue Object', async () => {
         const res = await qldbKVS.setValue(constants.DOC_OBJECT_KEY, constants.DOC_OBJECT_VALUE);
         console.log(`[TEST LOGS]Test setValue: ${JSON.stringify(res)}`)
-        assert.ok(res);
-    }).timeout(15000);
+        expect(res).toBeTruthy();
+    }, 15000);
 
     it('Test getValue String', async () => {
         const res = await qldbKVS.getValue(constants.DOC_STRING_KEY);
         console.log(`[TEST LOGS]Test getValue: ${JSON.stringify(res)}`)
-        assert.strictEqual(res, constants.DOC_STRING_VALUE)
-    }).timeout(10000);
+        expect(res).toEqual(constants.DOC_STRING_VALUE)
+    }, 10000);
 
     it('Test getValue Object', async () => {
         const res = await qldbKVS.getValue(constants.DOC_OBJECT_KEY);
         console.log(`[TEST LOGS]Test getValue: ${JSON.stringify(res)}`)
-        assert.deepStrictEqual(res, constants.DOC_OBJECT_VALUE)
-    }).timeout(10000);
+        expect(res).toEqual(constants.DOC_OBJECT_VALUE)
+    }, 10000);
 
     it('Test catching rejection from getValue for non-existing Object', async () => {
         let testResult = false;
@@ -60,7 +61,31 @@ describe('1.QLDBKVS.Object.test', () => {
             console.log(`[TEST LOGS]Test getValue non-existing Object. Successfully caught rejection: ${err}`)
             testResult = true;
         }
-        assert.ok(testResult);
-    }).timeout(5000);
+        expect(testResult).toBeTruthy();
+    }, 5000);
 
+    it('Test getValue Object with version', async () => {
+        const res = await qldbKVS.getValue(constants.DOC_OBJECT_KEY, true);
+        docVersion = res.version;
+        console.log(`[TEST LOGS]Test getValue with version: ${JSON.stringify(res)}`)
+        expect(res.data).toEqual(constants.DOC_OBJECT_VALUE)
+    }, 10000);
+
+    it('Test setValue Object with version lock', async () => {
+        const res = await qldbKVS.setValue(constants.DOC_OBJECT_KEY, constants.DOC_OBJECT_VALUE, docVersion);
+        console.log(`[TEST LOGS]Test setValue with version lock: ${JSON.stringify(res)}`)
+        expect(res).toBeTruthy();
+    }, 30000);
+
+    it('Test catching rejection from setValue for wrong Object version', async () => {
+        let testResult = false;
+        let wrongDocVersion = 1000;
+        try {
+            const res = await qldbKVS.setValue(constants.DOC_OBJECT_KEY, constants.DOC_OBJECT_VALUE, wrongDocVersion);
+        } catch (err) {
+            console.log(`[TEST LOGS]Test setValue for wrong Object version. Successfully caught rejection: ${err}`)
+            testResult = true;
+        }
+        expect(testResult).toBeTruthy();
+    }, 5000);
 });

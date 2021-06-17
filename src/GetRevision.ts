@@ -17,30 +17,11 @@
 import { Result, TransactionExecutor } from "amazon-qldb-driver-nodejs";
 import { QLDB } from "aws-sdk";
 import { GetRevisionRequest, GetRevisionResponse, ValueHolder } from "aws-sdk/clients/qldb";
-import { Base64EncodedString } from "./Util";
+import { Base64EncodedString, validateTableNameConstrains } from "./Util";
 import { dom } from "ion-js";
 
 import { log } from "./Logging";
 const logger = log.getLogger("qldb-helper");
-
-export interface DocumentRevision {
-    bockAddress: DocumentRevisionBlockAddress
-    hash: Base64EncodedString
-    data: ValueHolder
-    metadata: DocumentRevisionMetadata
-}
-
-export interface DocumentRevisionMetadata {
-    id: string
-    version: number
-    txTime: string
-    txId: string
-}
-
-export interface DocumentRevisionBlockAddress {
-    strandId: string
-    sequenceNo: number
-}
 
 /**
  * Get the revision data object for a specified document ID and block address.
@@ -88,6 +69,7 @@ export async function getRevisionByDocIdAndTxId(
     transactionId: string
 ): Promise<dom.Value> {
     const fcnName = "[GetRevision getRevisionByDocIdAndTxId]"
+    validateTableNameConstrains(tableName);
     const statement = `SELECT * FROM history(${tableName}) AS h WHERE h.metadata.id = ? AND h.metadata.txId = ?`
     try {
         logger.debug(`${fcnName} Executing statement ${statement}`);
@@ -114,6 +96,7 @@ export async function getRevisionMetadataByDocIdAndTxId(
     transactionId: string
 ): Promise<dom.Value> {
     const fcnName = "[GetRevision getRevisionMetadataByDocIdAndTxId]"
+    validateTableNameConstrains(tableName);
     const statement = `SELECT blockAddress, hash, metadata FROM history(${tableName}) AS h WHERE h.metadata.id = ? AND h.metadata.txId = ?`
     try {
         logger.debug(`${fcnName} Executing statement ${statement}`);

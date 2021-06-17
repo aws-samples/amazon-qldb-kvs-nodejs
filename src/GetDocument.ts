@@ -21,6 +21,25 @@ import { MAX_KEYS_TO_RETRIEVE } from "./Constants";
 import { validateTableNameConstrains, validateAttributeNameConstrains } from "./Util"
 const logger = log.getLogger("qldb-helper");
 
+export interface GetDocIdAndVersionResult {
+    id: string
+    version: number
+}
+
+export interface GetDocumentResult {
+    data: dom.Value
+    version: number
+}
+
+function prepareGetDocumentResult(resultList: dom.Value[]): GetDocumentResult[] {
+    return resultList.map((dataWithVersion) => {
+        return {
+            data: dataWithVersion.get("data"),
+            version: dataWithVersion.get("version").numberValue()
+        }
+    });
+}
+
 /**
  * Generates parameter string for queries with many similar params.
  * @param numberOfParams Number of ? characters in query.
@@ -49,14 +68,14 @@ function getBindParametersString(numberOfParams: number): String {
  * @returns Array of results as ION documents.
  * @throws Error: If error happen during the process.
  */
-export async function getByKeyAttribute(txn: TransactionExecutor, tableName: string, keyAttributeName: string, keyAttributeValue: string): Promise<dom.Value[]> {
-    const fcnName = "[QLDBHelper.getByKeyAttribute]"
+export async function getByKeyAttribute(txn: TransactionExecutor, tableName: string, keyAttributeName: string, keyAttributeValue: string): Promise<GetDocumentResult[]> {
+    const fcnName = "[GetDocument.getByKeyAttribute]"
     const startTime: number = new Date().getTime();
 
     try {
         validateTableNameConstrains(tableName);
         validateAttributeNameConstrains(keyAttributeName);
-        const query = `SELECT * FROM ${tableName} AS d BY id  WHERE d.${keyAttributeName} = ?`;
+        const query = `SELECT data, metadata.version FROM _ql_committed_${tableName} AS d  WHERE d.data.${keyAttributeName} = ?`;
 
         logger.debug(`${fcnName} Retrieving document values for Key: ${keyAttributeValue}`);
         logger.debug(`${fcnName} Query statement: ${query}`);
@@ -68,11 +87,11 @@ export async function getByKeyAttribute(txn: TransactionExecutor, tableName: str
         if (resultList.length === 0) {
             throw `${fcnName} Unable to find document with Key: ${keyAttributeValue}.`;
         }
-        return resultList;
+        return prepareGetDocumentResult(resultList);
     } catch (err) {
         const endTime: number = new Date().getTime();
         logger.debug(`${fcnName} Execution time: ${endTime - startTime}ms`)
-        throw new Error(err);
+        throw err;
     }
 }
 
@@ -85,15 +104,15 @@ export async function getByKeyAttribute(txn: TransactionExecutor, tableName: str
  * @returns Array of results as ION documents.
  * @throws Error: If error happen during the process.
  */
-export async function getByKeyAttributes(txn: TransactionExecutor, tableName: string, keyAttributeName: string, keyAttributeValues: string[]): Promise<dom.Value[]> {
-    const fcnName = "[QLDBHelper.getByKeyAttributes]"
+export async function getByKeyAttributes(txn: TransactionExecutor, tableName: string, keyAttributeName: string, keyAttributeValues: string[]): Promise<GetDocumentResult[]> {
+    const fcnName = "[GetDocument.getByKeyAttributes]"
     const startTime: number = new Date().getTime();
 
     try {
 
         validateTableNameConstrains(tableName);
         validateAttributeNameConstrains(keyAttributeName);
-        const query = `SELECT * FROM ${tableName} AS d BY id  WHERE d.${keyAttributeName} IN ${getBindParametersString(keyAttributeValues.length)}`;
+        const query = `SELECT data, metadata.version FROM _ql_committed_${tableName} AS d WHERE d.data.${keyAttributeName} IN ${getBindParametersString(keyAttributeValues.length)}`;
 
         if (keyAttributeValues.length > MAX_KEYS_TO_RETRIEVE) throw `Maximum number of keys (${MAX_KEYS_TO_RETRIEVE}) exceeded.`
 
@@ -107,11 +126,11 @@ export async function getByKeyAttributes(txn: TransactionExecutor, tableName: st
         if (resultList.length === 0) {
             throw `${fcnName} Unable to find documents with keys: ${keyAttributeValues}.`;
         }
-        return resultList;
+        return prepareGetDocumentResult(resultList);
     } catch (err) {
         const endTime: number = new Date().getTime();
         logger.debug(`${fcnName} Execution time: ${endTime - startTime}ms`)
-        throw new Error(err);
+        throw err;
     }
 }
 
@@ -123,13 +142,13 @@ export async function getByKeyAttributes(txn: TransactionExecutor, tableName: st
  * @returns Array of results as ION documents.
  * @throws Error: If error happen during the process.
  */
-export async function getDocumentById(txn: TransactionExecutor, tableName: string, documentId: string): Promise<dom.Value[]> {
-    const fcnName = "[QLDBHelper.getDocumentById]"
+export async function getDocumentById(txn: TransactionExecutor, tableName: string, documentId: string): Promise<GetDocumentResult[]> {
+    const fcnName = "[GetDocument.getDocumentById]"
     const startTime: number = new Date().getTime();
 
     try {
         validateTableNameConstrains(tableName);
-        const query = `SELECT * FROM ${tableName} BY id  WHERE id = ?`;
+        const query = `SELECT data, metadata.version FROM _ql_committed_${tableName}  WHERE metadata.id = ?`;
 
         logger.debug(`${fcnName} Retrieving document with Id: ${documentId}`);
         logger.debug(`${fcnName} Query statement: ${query}`);
@@ -141,11 +160,11 @@ export async function getDocumentById(txn: TransactionExecutor, tableName: strin
         if (resultList.length === 0) {
             throw `${fcnName} Unable to find document Id: ${documentId}.`;
         }
-        return resultList;
+        return prepareGetDocumentResult(resultList);
     } catch (err) {
         const endTime: number = new Date().getTime();
         logger.debug(`${fcnName} Execution time: ${endTime - startTime}ms`)
-        throw new Error(err);
+        throw err;
     }
 }
 /**
@@ -156,19 +175,19 @@ export async function getDocumentById(txn: TransactionExecutor, tableName: strin
 * @param keyAttributeValue The key of the given keyAttributeName.
 * @returns Promise which fulfills with the document ID as a string.
 */
-export async function getDocumentIds(
+export async function getDocumentIdsAndVersions(
     txn: TransactionExecutor,
     tableName: string,
     keyAttributeName: string,
     keyAttributeValue: string
-): Promise<string[]> {
-    const fcnName = "[Util.getDocumentIds]"
+): Promise<GetDocIdAndVersionResult[]> {
+    const fcnName = "[GetDocument.getDocumentIdsAndVersions]"
     const startTime: number = new Date().getTime();
 
     validateTableNameConstrains(tableName);
     validateAttributeNameConstrains(keyAttributeName);
-    const query = `SELECT id FROM ${tableName} AS t BY id WHERE t.${keyAttributeName} = ?`;
-    let documentIds: string[] = [];
+    const query = `SELECT metadata.id, metadata.version FROM _ql_committed_${tableName} AS t BY id WHERE t.data.${keyAttributeName} = ?`;
+    let documentIds: GetDocIdAndVersionResult[] = [];
 
     try {
         const result: Result = await txn.execute(query, keyAttributeValue);
@@ -179,7 +198,11 @@ export async function getDocumentIds(
 
         resultList.forEach(async (result, index) => {
             let id: string = resultList[index].get("id").stringValue();
-            documentIds.push(id)
+            let version: number = resultList[index].get("version").numberValue();
+            documentIds.push({
+                id: id,
+                version: version
+            });
         })
         return documentIds;
     } catch (err) {

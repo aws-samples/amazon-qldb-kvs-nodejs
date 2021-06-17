@@ -17,19 +17,19 @@
 import { QldbDriver, TransactionExecutor, Result } from "amazon-qldb-driver-nodejs";
 import { QLDB } from "aws-sdk";
 import { createTableWithIndex, listTables } from "./QLDBHelper";
-import { getByKeyAttribute, getByKeyAttributes } from "./GetDocument"
+import { getByKeyAttribute, getByKeyAttributes, GetDocumentResult } from "./GetDocument"
 import { getLedgerDigest } from './GetDigest';
 import { getDocumentLedgerMetadata, getDocumentLedgerMetadataByDocIdAndTxId, LedgerMetadata } from "./GetMetadata"
 import { getRevision } from "./GetRevision"
 import { upsert, UpsertResult } from "./UpsertDocument"
 import { getDocumentHistory } from "./GetDocumentHistory"
-import { verifyDocumentMetadataWithUserData } from "./VerifyDocument"
+import { verifyDocumentMetadataWithUserData } from "./VerifyLedgerMetadata"
 import { validateRevisionHash } from "./VerifyRevisionHash"
 
 import { log } from "./Logging";
 import { createQldbDriver } from "./ConnectToLedger"
 
-import { VALUE_ATTRIBUTE_NAME, KEY_ATTRIBUTE_NAME, DEFAULT_DOWNLOADS_PATH, MAX_QLDB_DOCUMENT_SIZE } from "./Constants";
+import { VALUE_ATTRIBUTE_NAME, KEY_ATTRIBUTE_NAME, DEFAULT_DOWNLOADS_PATH, MAX_QLDB_DOCUMENT_SIZE, TABLE_CREATION_MAX_WAIT } from "./Constants";
 import { GetRevisionResponse } from "aws-sdk/clients/qldb";
 import { makeReader, dom, load } from "ion-js";
 
@@ -42,8 +42,6 @@ const logger = log.getLogger("qldb-kvs");
 const mkdir: any = Util.promisify(fs.mkdir);
 const writeFile: any = Util.promisify(fs.writeFile);
 const readFile: any = Util.promisify(fs.readFile);
-// Waiting for table creation for 30 seconds before throwing an error
-const TABLE_CREATION_MAX_WAIT = 30000
 
 export class QLDBKVS {
     qldbDriver: QldbDriver;
@@ -75,6 +73,7 @@ export class QLDBKVS {
 
             this.ledgerName = ledgerName;
             this.tableName = tableName;
+            this.tableState = "CHECKING";
 
             logger.debug(`${fcnName} Creating QLDB driver`);
 
@@ -83,8 +82,6 @@ export class QLDBKVS {
             logger.debug(`${fcnName} QLDB driver created`);
 
             if (checkForTableAndCreate) {
-
-                this.tableState = "CHECKING";
                 // Making sure the table exists and set it for creation 
                 // next time somebody will decide to submit a new document to QLDB
                 (async () => {
@@ -101,6 +98,14 @@ export class QLDBKVS {
                     } else {
                         this.tableState = "NOT_EXIST";
                     }
+
+                    if (this.tableState === "NOT_EXIST") {
+                        this.tableState = "CREATING"
+                        logger.info(`${fcnName} Looks like a table with name ${tableName} does not exist. Creating it.`)
+                        await createTableWithIndex(this.qldbDriver, tableName, KEY_ATTRIBUTE_NAME);
+                        this.tableState = "EXIST";
+                        return true
+                    }
                 })();
             } else {
                 this.tableState = "EXIST";
@@ -111,6 +116,29 @@ export class QLDBKVS {
             throw new Error(msg);
         }
         return this;
+    }
+
+    /**
+     * Verify that table exists and create it if it doesn't
+     * @param tableName string The name of the table
+     * @returns A promise with "true" if table exists
+     * @throws Error: If error happen during the process.
+     */
+    private async assureTableExists(tableName: string): Promise<boolean> {
+        const fcnName = "[QLDBKVS.assureTableExists]";
+        // In case our table has not been created yet, waiting for it to be created
+        let cycles = TABLE_CREATION_MAX_WAIT / 100;
+        logger.debug(`${fcnName} Table with name ${tableName} still does not exist, waiting for it to be created.`)
+        do {
+            await sleep(100);
+            cycles--;
+            if (this.tableState === "EXIST") {
+                return true
+            }
+            if (cycles === 0) {
+                throw new Error(`Could not create a table with name ${tableName} in ${TABLE_CREATION_MAX_WAIT} milliseconds`)
+            }
+        } while (this.tableState === "CREATING" || this.tableState === "CHECKING");
     }
 
     /**
@@ -143,13 +171,13 @@ export class QLDBKVS {
                 await mkdir(DEFAULT_DOWNLOADS_PATH);
             }
 
-            const resultION = await this.qldbDriver.executeLambda(async (txn: TransactionExecutor) => {
+            const result: GetDocumentResult[] = await this.qldbDriver.executeLambda(async (txn: TransactionExecutor) => {
                 return await getByKeyAttribute(txn, tableName, KEY_ATTRIBUTE_NAME, paramId).catch((err) => {
                     throw `Unable to get file By Key Attribute: ${err}`;
                 });
             });
 
-            const valueBase64: string = resultION[0].get(VALUE_ATTRIBUTE_NAME).stringValue();
+            const valueBase64: string = result[0].data.get(VALUE_ATTRIBUTE_NAME).stringValue();
             const valueObject: Buffer = Buffer.from(valueBase64, "base64");
 
             await writeFile(localFilePath, valueObject);
@@ -204,24 +232,8 @@ export class QLDBKVS {
             }
             logger.debug(`${fcnName} Length of an object is ${documentObjectSize}`);
 
-            // In case our table has not been created yet, waiting for it to be created
-            if (this.tableState === "CREATING" || this.tableState === "CHECKING") {
-                let cycles = TABLE_CREATION_MAX_WAIT / 100;
-                logger.debug(`${fcnName} Table with name ${tableName} still does not exist, waiting for it to be created.`)
-                do {
-                    await sleep(100);
-                    cycles--;
-                    if (cycles === 0) {
-                        throw new Error(`Could not create a table with name ${tableName} in ${TABLE_CREATION_MAX_WAIT} milliseconds`)
-                    }
-                } while (this.tableState === "CREATING" || this.tableState === "CHECKING");
-            }
-            if (this.tableState === "NOT_EXIST") {
-                this.tableState = "CREATING"
-                logger.info(`${fcnName} Looks like a table with name ${tableName} does not exist. Creating it and re-trying file upload.`)
-                await createTableWithIndex(this.qldbDriver, tableName, KEY_ATTRIBUTE_NAME);
-                this.tableState = "EXIST";
-            }
+            await this.assureTableExists(tableName);
+
             return await this.qldbDriver.executeLambda(async (txn: TransactionExecutor) => {
                 return await upsert(txn, tableName, KEY_ATTRIBUTE_NAME, doc).catch((err) => {
                     throw err
@@ -241,9 +253,10 @@ export class QLDBKVS {
     /**
      * Get value for a corresponding key as JSON object
      * @param key A value of a key attribute to retrieve the record from.
+     * @param withVersionNumber If true, return the value along with it's version number from the ledger
      * @returns Promise with a value object as JSON.
      */
-    async getValue(key: string): Promise<object | Buffer> {
+    async getValue(key: string, withVersionNumber?: boolean): Promise<object | Buffer> {
         const fcnName = "[QLDBKVS.getValue]";
         const self: QLDBKVS = this;
         const ledgerName: string = self.ledgerName;
@@ -257,13 +270,14 @@ export class QLDBKVS {
 
             logger.debug(`${fcnName} Getting ${paramId} from ledger ${ledgerName} and table ${tableName} into a JSON object. (Expecting utf8 encoded string)`);
 
-            const resultION = await this.qldbDriver.executeLambda(async (txn: TransactionExecutor) => {
+            const result: GetDocumentResult[] = await this.qldbDriver.executeLambda(async (txn: TransactionExecutor) => {
                 return await getByKeyAttribute(txn, tableName, KEY_ATTRIBUTE_NAME, paramId).catch((err) => {
                     throw `Unable to get object By Key Attribute: ${err}`;
                 });
             })
 
-            const valueObject = resultION[0].get(VALUE_ATTRIBUTE_NAME).stringValue();
+            const valueObject = result[0].data.get(VALUE_ATTRIBUTE_NAME).stringValue();
+            const valueVersionNumber: number = result[0].version;
 
             if (!valueObject) {
                 throw `Requested document does not exist`;
@@ -275,7 +289,17 @@ export class QLDBKVS {
             } catch (err) {
                 returnValue = valueObject
             }
-            return returnValue;
+
+            let returnData;
+            if (withVersionNumber) {
+                returnData = {
+                    data: returnValue,
+                    version: valueVersionNumber
+                }
+            } else {
+                returnData = returnValue
+            }
+            return returnData;
 
         } catch (err) {
             const msg = `Requested document does not exist`;
@@ -291,9 +315,10 @@ export class QLDBKVS {
     /**
     * Get values by array of keys
     * @param keys An array of values of key attribute to retrieve the record from.
+    * @param withVersionNumbers If true, returns values along with their version numbers from the ledger
     * @returns Promise with an array of value objects as JSON.
     */
-    async getValues(keys: string[]): Promise<object[] | Buffer[]> {
+    async getValues(keys: string[], withVersionNumbers?: boolean): Promise<object[] | Buffer[]> {
         const fcnName = "[QLDBKVS.getValues]";
         const self: QLDBKVS = this;
         const ledgerName: string = self.ledgerName;
@@ -307,30 +332,41 @@ export class QLDBKVS {
 
             logger.debug(`${fcnName} Getting ${paramIds} from ledger ${ledgerName} and table ${tableName} into a JSON object. (Expecting utf8 encoded string)`);
 
-            const resultION = await this.qldbDriver.executeLambda(async (txn: TransactionExecutor) => {
+            const result: GetDocumentResult[] = await this.qldbDriver.executeLambda(async (txn: TransactionExecutor) => {
                 return await getByKeyAttributes(txn, tableName, KEY_ATTRIBUTE_NAME, paramIds).catch((err) => {
                     throw `Unable to get key by attributes: ${err}`;
                 });
             });
 
-            logger.debug(`${fcnName} Got result: ${JSON.stringify(resultION)}`);
+            logger.debug(`${fcnName} Got result: ${JSON.stringify(result)}`);
 
-            if (!resultION) {
-                throw `Requested document does not exist`;
+            if (!result) {
+                throw `Requested documents do not exist`;
             }
 
-            let valueObjects = new Array(resultION.length);
+            let returnObjects = new Array(result.length);
 
-            for (let index = 0; index < resultION.length; index++) {
-                const result = resultION[index];
-                const valueObject = result.get(VALUE_ATTRIBUTE_NAME).stringValue();
+            for (let index = 0; index < result.length; index++) {
+                const resultData = result[index].data;
+
+                const valueVersion = result[index].version;
+                const valueObject = resultData.get(VALUE_ATTRIBUTE_NAME).stringValue();
+                let returnValue
                 try {
-                    valueObjects[index] = JSON.parse(valueObject)
+                    returnValue = JSON.parse(valueObject)
                 } catch (err) {
-                    valueObjects[index] = valueObject
+                    returnValue = valueObject
                 }
-                if (index === resultION.length - 1) {
-                    return valueObjects;
+                if (withVersionNumbers) {
+                    returnObjects[index] = {
+                        data: returnValue,
+                        version: valueVersion
+                    }
+                } else {
+                    returnObjects[index] = returnValue
+                }
+                if (index === result.length - 1) {
+                    return returnObjects;
                 }
             }
         } catch (err) {
@@ -348,9 +384,10 @@ export class QLDBKVS {
      * Put a JSON object to QLDB as a key/value record
      * @param key A value of a key attribute to save the record with.
      * @param value A value of a value attribute to save the record with. If it's not a string, it will be stringified before submitting to the ledger.
+     * @param  version number (OPTIONAL) The versions of the document to make sure we update the right version. Function will return an error if the most recent version in the ledger is different.
      * @returns A promise with an object containing a document Id and transaction Id
      */
-    async setValue(key: string, value: any): Promise<UpsertResult> {
+    async setValue(key: string, value: any, version?: number): Promise<UpsertResult> {
         const fcnName = "[QLDBKVS.setValue]";
         const self: QLDBKVS = this;
         const startTime: number = new Date().getTime();
@@ -363,7 +400,7 @@ export class QLDBKVS {
                 throw new Error(`${fcnName}: Please specify a value`);
             }
 
-            const upsertResult = await this.setValues([key], [value]);
+            const upsertResult = await this.setValues([key], [value], [version]);
             return upsertResult[0];
 
         } catch (err) {
@@ -381,9 +418,10 @@ export class QLDBKVS {
  * Put a JSON object to QLDB as a key/value record
  * @param keys String[] An array of key attributes to save the records with.
  * @param values any [] An array of values of a value attributes to save the records with. If they are not a string, they will be stringified before submitting to the ledger.
+ * @param  versions number [] (OPTIONAL) An array of the versions of the documents to make sure we update the right version. Function will return an error if the most recent version in the ledger is different.
  * @returns A promise with an object containing a document Id and transaction Id
  */
-    async setValues(keys: string[], values: any[]): Promise<UpsertResult[]> {
+    async setValues(keys: string[], values: any[], versions?: number[]): Promise<UpsertResult[]> {
         const fcnName = "[QLDBKVS.setValues]";
         const self: QLDBKVS = this;
         const ledgerName: string = self.ledgerName;
@@ -402,6 +440,9 @@ export class QLDBKVS {
             }
             if (keys.length !== values.length) {
                 throw new Error(`${fcnName}: Please make sure the number of keys equals the number of values`);
+            }
+            if (versions && (values.length !== versions.length)) {
+                throw new Error(`${fcnName}: Please make sure the number of versions equals the number of values`);
             }
 
             const documentsArray: { [k: string]: any }[] = keys.map((key, index) => {
@@ -424,28 +465,12 @@ export class QLDBKVS {
             })
 
             // In case our table has not been created yet, waiting for it to be created
-            if (this.tableState === "CREATING" || this.tableState === "CHECKING") {
-                let cycles = TABLE_CREATION_MAX_WAIT / 100;
-                logger.debug(`${fcnName} Table with name ${tableName} still does not exist, waiting for it to be created.`)
-                do {
-                    await sleep(100);
-                    cycles--;
-                    if (cycles === 0) {
-                        throw new Error(`Could not create a table with name ${tableName} in ${TABLE_CREATION_MAX_WAIT} milliseconds`)
-                    }
-                } while (this.tableState === "CREATING" || this.tableState === "CHECKING");
-            }
-
-            if (this.tableState === "NOT_EXIST") {
-                this.tableState = "CREATING"
-                logger.info(`${fcnName} Looks like a table with name ${tableName} does not exist. Creating it and re-trying file upload.`)
-                await createTableWithIndex(this.qldbDriver, tableName, KEY_ATTRIBUTE_NAME);
-                this.tableState = "EXIST";
-            }
+            await this.assureTableExists(tableName);
 
             return await this.qldbDriver.executeLambda(async (txn: TransactionExecutor) => {
-                return await Promise.all(documentsArray.map((document) => {
-                    return upsert(txn, tableName, KEY_ATTRIBUTE_NAME, document).catch((err) => {
+                return await Promise.all(documentsArray.map((document, index) => {
+                    const version = versions ? versions[index] : null;
+                    return upsert(txn, tableName, KEY_ATTRIBUTE_NAME, document, version).catch((err) => {
                         throw err
                     });
                 }));
@@ -589,8 +614,8 @@ export class QLDBKVS {
      * @param {LedgerMetadata}  ledgerMetadata is an object that holds ledger metadata returned by function "getMetadata(key)"
      * @returns Promise with a boolean
      */
-    async verifyMetadata(ledgerMetadata: LedgerMetadata): Promise<boolean> {
-        const fcnName = "[QLDBKVS.verifyMetadata]";
+    async verifyLedgerMetadata(ledgerMetadata: LedgerMetadata): Promise<boolean> {
+        const fcnName = "[QLDBKVS.verifyLedgerMetadata]";
         const self: QLDBKVS = this;
         const ledgerName: string = self.ledgerName;
         const tableName: string = self.tableName;
@@ -620,8 +645,8 @@ export class QLDBKVS {
      * @param {LedgerMetadata}  ledgerMetadata is an object that holds ledger metadata returned by function "getMetadata(key)"
      * @returns Document with document revision
      */
-    async getDocumentRevisionByMetadata(ledgerMetadata: LedgerMetadata): Promise<any> {
-        const fcnName = "[QLDBKVS.getDocumentRevisionByMetadata]";
+    async getDocumentRevisionByLedgerMetadata(ledgerMetadata: LedgerMetadata): Promise<any> {
+        const fcnName = "[QLDBKVS.getDocumentRevisionByLedgerMetadata]";
         const self: QLDBKVS = this;
         const ledgerName: string = self.ledgerName;
         const startTime: number = new Date().getTime();
@@ -648,7 +673,7 @@ export class QLDBKVS {
 
     /**
      * Verify document revision hash
-     * @param {JSON}  documentRevision is an object that holds document revision returned by function "getDocumentRevisionByMetadata(ledgerMetadata)" or "getHistory(key)"
+     * @param {JSON}  documentRevision is an object that holds document revision returned by function "getDocumentRevisionByLedgerMetadata(ledgerMetadata)" or "getHistory(key)"
      * @returns Document with document revision
      */
     verifyDocumentRevisionHash(documentRevision: any): boolean {

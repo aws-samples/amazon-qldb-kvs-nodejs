@@ -16,7 +16,7 @@
 
 import { TransactionExecutor, Result } from "amazon-qldb-driver-nodejs";
 import { validateTableNameConstrains } from "./Util"
-import { getDocumentIds } from "./GetDocument"
+import { getDocumentIdsAndVersions, GetDocIdAndVersionResult } from "./GetDocument"
 import { log } from "./Logging";
 const logger = log.getLogger("qldb-helper");
 
@@ -24,6 +24,7 @@ export class UpsertResult {
     documentId: string;
     txId: string;
 }
+
 
 /**
 * Updates or inserts a new document, using keyAttributeName to hold a unique key.
@@ -34,7 +35,7 @@ export class UpsertResult {
 * @returns A number of changes made to the ledger.
 * @throws Error: If error happen during the process.
 */
-export async function upsert(txn: TransactionExecutor, tableName: string, keyAttributeName: string, documentJSON: object): Promise<UpsertResult> {
+export async function upsert(txn: TransactionExecutor, tableName: string, keyAttributeName: string, documentJSON: object, version?: number): Promise<UpsertResult> {
     const fcnName = "[UpsertDocument.upsert]"
     const startTime: number = new Date().getTime();
     const txId = txn.getTransactionId();
@@ -46,17 +47,17 @@ export async function upsert(txn: TransactionExecutor, tableName: string, keyAtt
         } else {
             throw `Attribute with name ${keyAttributeName} does not exist in document passed: ${JSON.stringify(documentJSON)}`
         }
-        let docIds: string[] = [];
+        let docIdsAndVersions: GetDocIdAndVersionResult[] = [];
 
         try {
-            docIds = await getDocumentIds(txn, tableName, keyAttributeName, documentJSONKeyValue);
+            docIdsAndVersions = await getDocumentIdsAndVersions(txn, tableName, keyAttributeName, documentJSONKeyValue);
         } catch (err) {
             logger.debug(`${fcnName} Unable to find a document. So assuming we are inserting a new document.`);
         }
 
         // If multiple, return an error
-        if (docIds.length > 1) {
-            throw `More than one document found with ${keyAttributeName} = ${documentJSONKeyValue}. Found ids: ${docIds}`
+        if (docIdsAndVersions.length > 1) {
+            throw `More than one document found with ${keyAttributeName} = ${documentJSONKeyValue}. Found ids and versions: ${JSON.stringify(docIdsAndVersions)}`
         }
 
         // Preparing request statement and parameters
@@ -65,10 +66,13 @@ export async function upsert(txn: TransactionExecutor, tableName: string, keyAtt
         let result: Result
 
         // If exists, update the doc
-        if (docIds.length == 1) {
+        if (docIdsAndVersions.length == 1) {
             logger.debug(`${fcnName} Document exists, updating.`);
-            const documentId: string = docIds[0];
-            //statement = `UPDATE ${tableName} AS d SET d = ? WHERE d.${keyAttributeName} = ?`;
+            const documentId: string = docIdsAndVersions[0].id;
+            const documentVersion: number = docIdsAndVersions[0].version;
+            if (version && (version !== documentVersion)) {
+                throw new Error(`Expected version number ${version} does not equal ${documentVersion} the latest version number in the ledger `);
+            }
             // Just to be 100% sure we are updating a right document in deterministic way
             validateTableNameConstrains(tableName);
             statement = `UPDATE ${tableName} AS d BY id SET d = ? WHERE id = ?`;
@@ -77,7 +81,7 @@ export async function upsert(txn: TransactionExecutor, tableName: string, keyAtt
         }
 
         // If not exists, insert a new doc
-        if (docIds.length == 0) {
+        if (docIdsAndVersions.length == 0) {
             logger.debug(`${fcnName} Document does not exist yet, inserting a new one.`);
             validateTableNameConstrains(tableName);
             statement = `INSERT INTO ${tableName} ?`;

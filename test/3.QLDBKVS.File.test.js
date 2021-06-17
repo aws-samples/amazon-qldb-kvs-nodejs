@@ -24,20 +24,20 @@ const constants = require("./QLDBKVS.Constants");
  */
 describe('3.QLDBKVS.File.test', () => {
     let qldbKVS;
-    before('Test QLDB Helper constructor', async () => {
+    beforeAll(async () => {
         qldbKVS = new QLDBKVS(constants.LEDGER_NAME, constants.TABLE_NAME);
     });
 
     it('Test uploadAsFile', async () => {
         const res = await qldbKVS.uploadAsFile(constants.FILE_KEY, constants.IN_FILE_PATH);
         console.log(`[TEST LOGS]Test setValue: ${JSON.stringify(res)}`)
-        assert.ok(res);
-    }).timeout(30000);
+        expect(res).toBeTruthy();
+    }, 30000);
 
     it('Test downloadAsFile', async () => {
         const res = await qldbKVS.downloadAsFile(constants.FILE_KEY, constants.OUT_FILE_PATH);
         console.log(`[TEST LOGS]Test downloadAsFile: ${JSON.stringify(res)}`)
-        assert.equal(res, constants.OUT_FILE_PATH)
-    }).timeout(5000);
+        expect(res).toEqual(constants.OUT_FILE_PATH)
+    }, 5000);
 
 });

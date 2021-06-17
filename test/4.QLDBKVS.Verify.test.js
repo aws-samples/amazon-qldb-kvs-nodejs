@@ -15,7 +15,6 @@
  */
 
 const QLDBKVS = require("../dist/index").QLDBKVS;
-const assert = require("assert");
 const constants = require("./QLDBKVS.Constants");
 
 /**
@@ -29,65 +28,66 @@ describe('4.QLDBKVS.Verify.test', () => {
     let ledgerMetadataByTxId;
     let documentHistory;
     let documentRevision;
-    before('Test QLDB Helper constructor', async () => {
+    beforeAll(async () => {
         qldbKVS = new QLDBKVS(constants.LEDGER_NAME, constants.TABLE_NAME, false);
+        await qldbKVS.setValues([constants.DOC_OBJECT_KEY, constants.DOC_STRING_KEY], [constants.DOC_OBJECT_VALUE, constants.DOC_STRING_VALUE]);
     });
 
     it('Test getMetadata', async () => {
         const res = await qldbKVS.getMetadata(constants.DOC_STRING_KEY);
         console.log(`[TEST LOGS]Test getMetadata: ${JSON.stringify(res)}`)
-        assert.ok(res.LedgerName);
+        expect(res.LedgerName).toBeTruthy();
         // Making sure we convert ledgerMetadata from text
         ledgerMetadata = JSON.parse(JSON.stringify(res));
-    }).timeout(30000);
+    }, 30000);
 
-    // it('Updating String to change Metadata in Ledger and retrieving metadata by document id and transaction id and Retrieving metadata by document id and transaction id for the recent update', async () => {
-    //     updateResponse = await qldbKVS.setValue(constants.DOC_STRING_KEY, constants.DOC_STRING_VALUE);
-    //     console.log(`[TEST LOGS]Updating String to change Metadata in Ledger. Response: ${JSON.stringify(updateResponse)}`)
-    //     console.log(`[TEST LOGS]Retrieving metadata by: ${JSON.stringify(updateResponse)}`)
-    //     ledgerMetadataByTxId = await qldbKVS.getMetadataByDocIdAndTxId(updateResponse.documentId, updateResponse.txId);
-    //     assert.ok(ledgerMetadataByTxId);
-    // }).timeout(30000);
+    it('Updating String to change Metadata in Ledger and retrieving metadata by document id and transaction id and Retrieving metadata by document id and transaction id for the recent update', async () => {
+        updateResponse = await qldbKVS.setValue(constants.DOC_STRING_KEY, constants.DOC_STRING_VALUE);
+        console.log(`[TEST LOGS]Updating String to change Metadata in Ledger. Response: ${JSON.stringify(updateResponse)}`)
+        console.log(`[TEST LOGS]Retrieving metadata by: ${JSON.stringify(updateResponse)}`)
+        ledgerMetadataByTxId = await qldbKVS.getMetadataByDocIdAndTxId(updateResponse.documentId, updateResponse.txId);
+        expect(ledgerMetadataByTxId).toBeTruthy();
+    }, 30000);
 
-    it('Test verifyMetadata for metadata before update', async () => {
-        const res = await qldbKVS.verifyMetadata(ledgerMetadata);
-        console.log(`[TEST LOGS]Test verifyMetadata: ${JSON.stringify(res)}`)
-        assert.ok(res);
-    }).timeout(8000);
+    it('Test verifyLedgerMetadata for metadata before update', async () => {
+        const res = await qldbKVS.verifyLedgerMetadata(ledgerMetadata);
+        console.log(`[TEST LOGS]Test verifyLedgerMetadata: ${JSON.stringify(res)}`)
+        expect(res).toBeTruthy();
+    }, 8000);
 
-    it('Test verifyMetadata for metadata after update', async () => {
-        const res = await qldbKVS.verifyMetadata(ledgerMetadata);
-        console.log(`[TEST LOGS]Test verifyMetadata: ${JSON.stringify(res)}`)
-        assert.ok(res);
-    }).timeout(8000);
+    it('Test verifyLedgerMetadata for metadata after update', async () => {
+        const res = await qldbKVS.verifyLedgerMetadata(ledgerMetadata);
+        console.log(`[TEST LOGS]Test verifyLedgerMetadata: ${JSON.stringify(res)}`)
+        expect(res).toBeTruthy();
+    }, 8000);
 
     it('Test getHistory', async () => {
         const res = await qldbKVS.getHistory(constants.DOC_STRING_KEY);
         console.log(`[TEST LOGS]Test getHistory: ${JSON.stringify(res)}`)
-        assert.ok(res[0]);
+        expect(res[0]).toBeTruthy();
         // Making sure we convert ledgerMetadata from text
         documentHistory = JSON.parse(JSON.stringify(res));
-    }).timeout(8000);
+    }, 8000);
 
-    it('Test getDocumentRevisionByMetadata', async () => {
-        const res = await qldbKVS.getDocumentRevisionByMetadata(ledgerMetadata);
-        console.log(`[TEST LOGS]Test getDocumentRevisionByMetadata: ${JSON.stringify(res)}`)
-        assert.ok(res);
+    it('Test getDocumentRevisionByLedgerMetadata', async () => {
+        const res = await qldbKVS.getDocumentRevisionByLedgerMetadata(ledgerMetadata);
+        console.log(`[TEST LOGS]Test getDocumentRevisionByLedgerMetadata: ${JSON.stringify(res)}`)
+        expect(res).toBeTruthy();
         // Making sure we convert ledgerMetadata from text
         documentRevision = JSON.parse(JSON.stringify(res));
-    }).timeout(8000);
+    }, 8000);
 
     it('Test verifyDocumentRevisionHash', async () => {
         const res = qldbKVS.verifyDocumentRevisionHash(documentRevision);
         console.log(`[TEST LOGS]Test verifyDocumentRevisionHash: ${JSON.stringify(res)}`)
-        assert.ok(res);
-    }).timeout(8000);
+        expect(res).toBeTruthy();
+    }, 8000);
 
     it('Test verifyDocumentRevisionHash fails if revision has been changed', async () => {
         documentRevision.data._val = "EvilValue";
         const res = qldbKVS.verifyDocumentRevisionHash(documentRevision);
         console.log(`[TEST LOGS]Test verifyDocumentRevisionHash: ${JSON.stringify(res)}`)
-        assert.ok(!res)
-    }).timeout(8000);
+        expect(res).toBeFalsy();
+    }, 8000);
 
 });
