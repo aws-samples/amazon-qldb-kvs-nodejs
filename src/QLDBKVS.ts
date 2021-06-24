@@ -569,10 +569,12 @@ export class QLDBKVS {
 
     /**
      * Get complete history of a document, associated with the certain key
-     * @param key A value of a key attribute to retrieve the record from.
+     * @param {string} key A value of a key attribute to retrieve the record from.
+     * @param {string} fromDateISO OPTIONAL String, containing a from date and time  in ISO format like `2019-06-05T00:00:00Z` to query revisions history from.
+     * @param {string} toDateISO OPTIONAL String, containing a to date and time in ISO format like `2019-06-05T00:00:00Z` to query revisions history to.
      * @returns Promise with an array of documents as JSON.
      */
-    async getHistory(key: string): Promise<object[]> {
+    async getHistory(key: string, fromDateISO?: string, toDateISO?: string): Promise<object[]> {
         const fcnName = "[QLDBKVS.getHistory]";
         const self: QLDBKVS = this;
         const ledgerName: string = self.ledgerName;
@@ -587,7 +589,7 @@ export class QLDBKVS {
             logger.debug(`${fcnName} Getting history for ${paramId} from ledger ${ledgerName} and table ${tableName} into a JSON object`);
 
             const result: object[] = await this.qldbDriver.executeLambda(async (txn: TransactionExecutor) => {
-                return await getDocumentHistory(txn, tableName, KEY_ATTRIBUTE_NAME, paramId).catch((err) => {
+                return await getDocumentHistory(txn, tableName, KEY_ATTRIBUTE_NAME, paramId, fromDateISO, toDateISO).catch((err) => {
                     throw err
                 });
             })

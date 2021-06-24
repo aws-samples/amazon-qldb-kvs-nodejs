@@ -183,3 +183,20 @@ export function validateAttributeNameConstrains(attributeName: string): boolean 
 
     return true;
 }
+
+
+/**
+ * Checks if a string is in a correct ISO 8601 datetime format like `2019-06-05T00:00:00Z`
+ * @param dateTimeISO A string containing a name of a document attribute.
+ * @returns Returns true if string complies with attribute naming constrains and trows an error if otherwise.
+ */
+export function validateStringAsISODateTime(dateTimeISO: string): boolean {
+    const dateTimeStringRegexTemplate = /\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z)/g;
+    const nameStringRegexCheckResult = dateTimeStringRegexTemplate.test(dateTimeISO);
+
+    if (!nameStringRegexCheckResult) {
+        throw new Error(`Please check dateTimeISO is in ISO 8601 datetime format like 2019-06-05T00:00:00Z. Received: ${dateTimeISO}`)
+    }
+
+    return true;
+}

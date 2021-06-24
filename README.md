@@ -103,8 +103,8 @@ const DOC_OBJECT_VALUE2 = {
             console.log(`Metadata for key "${DOC_OBJECT_KEY1}" is not valid.`);
         }
 
-        // Getting history for stored document
-        const history = await qldbKVS.getHistory(DOC_OBJECT_KEY1);
+        // Getting history for stored document, optionally specify to and from date strings in ISO 8601 format like 2019-06-05T00:00:00Z (no milliseconds).
+        const history = await qldbKVS.getHistory(DOC_OBJECT_KEY1, /*fromDateStringAsISO, toDateStringAsISO*/);
         if (history) {
             console.log(`History for document with Key "${DOC_OBJECT_KEY1}": ${JSON.stringify(history)}`);
         } else {
@@ -112,7 +112,7 @@ const DOC_OBJECT_VALUE2 = {
         }
 
         // Getting document revision by metadata
-        const documentRevision = await qldbKVS.getDocumentRevisionByMetadata(metadata);
+        const documentRevision = await qldbKVS.getDocumentRevisionByLedgerMetadata(metadata);
         if (documentRevision) {
             console.log(`Document revision for metadata "${JSON.stringify(metadata)}": ${JSON.stringify(documentRevision)}`);
         } else {

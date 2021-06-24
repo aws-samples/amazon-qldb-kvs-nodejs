@@ -15,7 +15,7 @@
  */
 
 import { TransactionExecutor, Result } from "amazon-qldb-driver-nodejs";
-import { validateTableNameConstrains } from "./Util";
+import { validateTableNameConstrains, validateStringAsISODateTime } from "./Util";
 import { getDocumentIdsAndVersions } from "./GetDocument";
 import { dom } from "ion-js";
 import { log } from "./Logging";
@@ -65,10 +65,12 @@ export async function getDocumentRevisionByIdAndBlock(txn: TransactionExecutor, 
  * @param {string} tableName The name of a table.
  * @param {string} keyAttributeName A keyAttributeName to query.
  * @param {string} keyAttributeValue The key of the given keyAttributeName.
+ * @param {string} fromDateISO OPTIONAL String, containing a from date and time to query revisions history from.
+ * @param {string} toDateISO OPTIONAL String, containing a to date and time to query revisions history to.
  * @returns An ION document.
  * @throws Error: If error happen during the process.
  */
-export async function getDocumentHistory(txn: TransactionExecutor, tableName: string, keyAttributeName: string, keyAttributeValue: string): Promise<dom.Value[]> {
+export async function getDocumentHistory(txn: TransactionExecutor, tableName: string, keyAttributeName: string, keyAttributeValue: string, fromDateISO?: string, toDateISO?: string): Promise<dom.Value[]> {
     const fcnName = "[GetDocumentHistory.getDocumentRevisionByIdAndBlock]"
     const startTime: number = new Date().getTime();
     let documentId: string;
@@ -78,7 +80,17 @@ export async function getDocumentHistory(txn: TransactionExecutor, tableName: st
         documentId = documentIds[0].id;
 
         validateTableNameConstrains(tableName);
-        const query = `SELECT * FROM history( ${tableName} ) AS h WHERE h.metadata.id = ? `;
+        let query = `SELECT * FROM history( ${tableName} ) AS h WHERE h.metadata.id = ? `;
+
+        if (fromDateISO) {
+            validateStringAsISODateTime(fromDateISO);
+            if (toDateISO) {
+                validateStringAsISODateTime(toDateISO);
+                query = `SELECT * FROM history( ${tableName}, \`${fromDateISO}\`, \`${toDateISO}\`) AS h WHERE h.metadata.id = ? `;
+            } else {
+                query = `SELECT * FROM history( ${tableName}, \`${fromDateISO}\`) AS h WHERE h.metadata.id = ? `;
+            }
+        }
 
         logger.debug(`${fcnName} Retrieving document history for Id: ${documentId}`);
         logger.debug(`${fcnName} Query statement: ${query}`);

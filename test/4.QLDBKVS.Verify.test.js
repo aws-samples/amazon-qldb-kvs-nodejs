@@ -69,6 +69,33 @@ describe('4.QLDBKVS.Verify.test', () => {
         documentHistory = JSON.parse(JSON.stringify(res));
     }, 8000);
 
+    it('Test getHistory with from date', async () => {
+        const fromDate = new Date(new Date().getTime() - 1 * 60000).toISOString().split('.')[0] + "Z";
+        const res = await qldbKVS.getHistory(constants.DOC_STRING_KEY, fromDate);
+        console.log(`[TEST LOGS]Test getHistory with from date: ${JSON.stringify(res)}`)
+        expect(res[0]).toBeTruthy();
+    }, 8000);
+
+    it('Test getHistory with from and to dates', async () => {
+        const fromDate = new Date(new Date().getTime() - 2 * 60000).toISOString().split('.')[0] + "Z";
+        const toDate = new Date(new Date().getTime() - 0.1 * 60000).toISOString().split('.')[0] + "Z";
+        const res = await qldbKVS.getHistory(constants.DOC_STRING_KEY, fromDate, toDate);
+        console.log(`[TEST LOGS]Test getHistory with from date: ${JSON.stringify(res)}`)
+        expect(res[0]).toBeTruthy();
+    }, 8000);
+
+    it('Test getHistory with wrong date', async () => {
+        const fromDate = `2019-06-05T30:00:00Z`;
+        let testResult = false;
+        try {
+            const res = await qldbKVS.getHistory(constants.DOC_STRING_KEY, fromDate);
+        } catch (err) {
+            console.log(`[TEST LOGS]Test getHistory with wrong from date.  Successfully caught rejection: ${err}`)
+            testResult = true;
+        }
+        expect(testResult).toBeTruthy();
+    }, 8000);
+
     it('Test getDocumentRevisionByLedgerMetadata', async () => {
         const res = await qldbKVS.getDocumentRevisionByLedgerMetadata(ledgerMetadata);
         console.log(`[TEST LOGS]Test getDocumentRevisionByLedgerMetadata: ${JSON.stringify(res)}`)
