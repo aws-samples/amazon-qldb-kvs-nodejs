@@ -148,7 +148,7 @@ npm run doc
 
 ### Limitations
 
-1. Documents stored with this library will have only two attributes: `_key` and `_val` containing document key and value respectively. This means that practically queries can be performed only based on `_key` attribute and can not access any attributes of the stored value.
+1. Documents stored with this library will have only two attributes: `_k` and `_v` containing document key and value respectively. This means that practically queries can be performed only based on `_k` attribute and can not access any attributes of the stored value.
 2. Binary files, uploaded with `uploadAsFile` method, are converted to base64 format and stored as a string. Maximum file size in this case is around 88 Kb. For larger files please use a service like Amazon S3 with Object Lock feature.
 
 ### Verification algorithm
