@@ -31,33 +31,33 @@ export class UpsertResult {
 * @param txn The {@linkcode TransactionExecutor} for lambda execute.
 * @param tableName The name of a table.
 * @param keyAttributeName The name of an attribute for indexing.
-* @param documentJSON Document to add to the table. Should contain an attribute with the name "keyAttributeName".
+* @param documentIon Document to add to the table. Should contain an attribute with the name "keyAttributeName".
 * @returns A number of changes made to the ledger.
 * @throws Error: If error happen during the process.
 */
-export async function upsert(txn: TransactionExecutor, tableName: string, keyAttributeName: string, documentJSON: object, version?: number): Promise<UpsertResult> {
+export async function upsert(txn: TransactionExecutor, tableName: string, keyAttributeName: string, documentIon: object, version?: number): Promise<UpsertResult> {
     const fcnName = "[UpsertDocument.upsert]"
     const startTime: number = new Date().getTime();
     const txId = txn.getTransactionId();
     try {
         // Retrieve document id by key value
-        let documentJSONKeyValue = "";
-        if (keyAttributeName in documentJSON) {
-            documentJSONKeyValue = documentJSON[keyAttributeName as keyof typeof documentJSON];
+        let documentIonKeyValue = "";
+        if (keyAttributeName in documentIon) {
+            documentIonKeyValue = documentIon[keyAttributeName as keyof typeof documentIon];
         } else {
-            throw `Attribute with name ${keyAttributeName} does not exist in document passed: ${JSON.stringify(documentJSON)}`
+            throw `Attribute with name ${keyAttributeName} does not exist in document passed: ${JSON.stringify(documentIon)}`
         }
         let docIdsAndVersions: GetDocIdAndVersionResult[] = [];
 
         try {
-            docIdsAndVersions = await getDocumentIdsAndVersions(txn, tableName, keyAttributeName, documentJSONKeyValue);
+            docIdsAndVersions = await getDocumentIdsAndVersions(txn, tableName, keyAttributeName, documentIonKeyValue);
         } catch (err) {
             logger.debug(`${fcnName} Unable to find a document. So assuming we are inserting a new document.`);
         }
 
         // If multiple, return an error
         if (docIdsAndVersions.length > 1) {
-            throw `More than one document found with ${keyAttributeName} = ${documentJSONKeyValue}. Found ids and versions: ${JSON.stringify(docIdsAndVersions)}`
+            throw `More than one document found with ${keyAttributeName} = ${documentIonKeyValue}. Found ids and versions: ${JSON.stringify(docIdsAndVersions)}`
         }
 
         // Preparing request statement and parameters
@@ -77,7 +77,7 @@ export async function upsert(txn: TransactionExecutor, tableName: string, keyAtt
             validateTableNameConstrains(tableName);
             statement = `UPDATE ${tableName} AS d BY id SET d = ? WHERE id = ?`;
             logger.debug(`${fcnName} Executing statement ${statement}`);
-            result = await txn.execute(statement, documentJSON, documentId);
+            result = await txn.execute(statement, documentIon, documentId);
         }
 
         // If not exists, insert a new doc
@@ -86,10 +86,10 @@ export async function upsert(txn: TransactionExecutor, tableName: string, keyAtt
             validateTableNameConstrains(tableName);
             statement = `INSERT INTO ${tableName} ?`;
             logger.debug(`${fcnName} Executing statement ${statement}`);
-            result = await txn.execute(statement, documentJSON);
+            result = await txn.execute(statement, documentIon);
         }
 
-        logger.info(`${fcnName} Document with key "${documentJSONKeyValue}" is added to the table with name "${tableName}"`);
+        logger.info(`${fcnName} Document with key "${documentIonKeyValue}" is added to the table with name "${tableName}"`);
         logger.debug(`${fcnName} Returned results list: ${result.getResultList()}`);
         const finalResult: UpsertResult[] = result.getResultList().map((returnObject) => {
             return {

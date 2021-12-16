@@ -119,7 +119,7 @@ const DOC_OBJECT_VALUE2 = {
             console.log(`Document revision for metadata "${JSON.stringify(metadata)} is not found.`);
         }
 
-        // Verifying document revision hash
+        // Verifying document revision hash for full document revision. You may use it in combination with "verifyMetadata" function to check integrity of data from the level of the document all the way to the LedgerDigest
         const isValid = await qldbKVS.verifyDocumentRevisionHash(documentRevision);
         if (isValid) {
             console.log(`Document revision hash is valid`);
@@ -146,10 +146,23 @@ npm install
 npm run doc
 ```
 
-### Limitations
+### Implementation details
 
-1. Documents stored with this library will have only two attributes: `_k` and `_v` containing document key and value respectively. This means that practically queries can be performed only based on `_k` attribute and can not access any attributes of the stored value.
-2. Binary files, uploaded with `uploadAsFile` method, are converted to base64 format and stored as a string. Maximum file size in this case is around 88 Kb. For larger files please use a service like Amazon S3 with Object Lock feature.
+1. If the value is a JSON document, the library will convert to Amazon Ion format and add an indexed filed `_k` to hold the key.
+2. For Sting and File (binary) values, in addition to indexed filed `_k` the library will add an extra filed `_v` to hold the value. This field is not indexed, which means that queries can be performed only based on `_k` attribute and can not access any attributes of the stored value.
+3. Files, uploaded with `uploadAsFile` method, are converted to base64 format and stored as a string. Maximum file size in this case is around 88 Kb. For larger files it is better to use an object storage service like Amazon S3 with Object Lock feature.
+4. Since Amazon Ion is richer in types than JSON, automatic conversion will convert between the following types:
+
+
+| JSON Type Name | Amazon Ion Type Name|
+|-|-|
+| String | string |
+| Number | int |
+| Number with decimal point | float |
+| Boolean | boolean |
+| Null | null |
+| Object | struct |
+| Array | list |
 
 ### Verification algorithm
 For the details on how verification algorithm works, please see this document: [VERIFICATION.md](./docs/VERIFICATION.md)

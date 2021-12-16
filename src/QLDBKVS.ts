@@ -270,36 +270,15 @@ export class QLDBKVS {
 
             logger.debug(`${fcnName} Getting ${paramId} from ledger ${ledgerName} and table ${tableName} into a JSON object. (Expecting utf8 encoded string)`);
 
-            const result: GetDocumentResult[] = await this.qldbDriver.executeLambda(async (txn: TransactionExecutor) => {
-                return await getByKeyAttribute(txn, tableName, KEY_ATTRIBUTE_NAME, paramId).catch((err) => {
-                    throw `Unable to get object By Key Attribute: ${err}`;
-                });
-            })
+            const result = await this.getValues([key], withVersionNumber);
 
-            const valueObject = result[0].data.get(VALUE_ATTRIBUTE_NAME).stringValue();
-            const valueVersionNumber: number = result[0].version;
+            const valueObject = result[0];
 
             if (!valueObject) {
                 throw `Requested document does not exist`;
             }
 
-            let returnValue;
-            try {
-                returnValue = JSON.parse(valueObject)
-            } catch (err) {
-                returnValue = valueObject
-            }
-
-            let returnData;
-            if (withVersionNumber) {
-                returnData = {
-                    data: returnValue,
-                    version: valueVersionNumber
-                }
-            } else {
-                returnData = returnValue
-            }
-            return returnData;
+            return valueObject;
 
         } catch (err) {
             const msg = `Requested document does not exist`;
@@ -350,13 +329,24 @@ export class QLDBKVS {
                 const resultData = result[index].data;
 
                 const valueVersion = result[index].version;
-                const valueObject = resultData.get(VALUE_ATTRIBUTE_NAME).stringValue();
-                let returnValue
-                try {
-                    returnValue = JSON.parse(valueObject)
-                } catch (err) {
-                    returnValue = valueObject
+                //const valueObject = resultData.get(VALUE_ATTRIBUTE_NAME).stringValue();
+                let returnValue;
+
+                // If we have an attribute value set, we assume the value is a string
+                if (resultData.get(VALUE_ATTRIBUTE_NAME)) {
+                    returnValue = resultData.get(VALUE_ATTRIBUTE_NAME).stringValue();
+                } else {
+                    let returnValueTMP: { [k: string]: any }
+                    try {
+                        returnValueTMP = JSON.parse(JSON.stringify(resultData));
+                        delete returnValueTMP[KEY_ATTRIBUTE_NAME];
+                    } catch (err) {
+                        throw `Unable to convert to JSON an Ion object with key ${resultData.get(KEY_ATTRIBUTE_NAME).stringValue()}: ${err}`;
+                    }
+                    returnValue = JSON.parse(JSON.stringify(returnValueTMP));
+
                 }
+
                 if (withVersionNumbers) {
                     returnObjects[index] = {
                         data: returnValue,
@@ -383,7 +373,7 @@ export class QLDBKVS {
     /**
      * Put a JSON object to QLDB as a key/value record
      * @param key A value of a key attribute to save the record with.
-     * @param value A value of a value attribute to save the record with. If it's not a string, it will be stringified before submitting to the ledger.
+     * @param value A value of a value attribute to save the record with. If it's not a string, it will be converted to Amazon Ion before submitting to the ledger.
      * @param  version number (OPTIONAL) The versions of the document to make sure we update the right version. Function will return an error if the most recent version in the ledger is different.
      * @returns A promise with an object containing a document Id and transaction Id
      */
@@ -415,12 +405,12 @@ export class QLDBKVS {
     }
 
     /**
- * Put a JSON object to QLDB as a key/value record
- * @param keys String[] An array of key attributes to save the records with.
- * @param values any [] An array of values of a value attributes to save the records with. If they are not a string, they will be stringified before submitting to the ledger.
- * @param  versions number [] (OPTIONAL) An array of the versions of the documents to make sure we update the right version. Function will return an error if the most recent version in the ledger is different.
- * @returns A promise with an object containing a document Id and transaction Id
- */
+     * Put a JSON object to QLDB as a key/value record
+     * @param keys String[] An array of key attributes to save the records with.
+     * @param values any [] An array of values of a value attributes to save the records with. If they are not a string, they will be converted to Amazon Ion before submitting to the ledger.
+     * @param  versions number [] (OPTIONAL) An array of the versions of the documents to make sure we update the right version. Function will return an error if the most recent version in the ledger is different.
+     * @returns A promise with an object containing a document Id and transaction Id
+     */
     async setValues(keys: string[], values: any[], versions?: number[]): Promise<UpsertResult[]> {
         const fcnName = "[QLDBKVS.setValues]";
         const self: QLDBKVS = this;
@@ -446,19 +436,18 @@ export class QLDBKVS {
             }
 
             const documentsArray: { [k: string]: any }[] = keys.map((key, index) => {
-                let valueAsString = values[index];
-
-                if (typeof values[index] !== "string") {
-                    try {
-                        valueAsString = JSON.stringify(values[index]);
-                    } catch (err) {
-                        throw new Error(`${fcnName} Could not parse submitted value [${values[index]}] to JSON: ${err}`);
-                    }
-                }
 
                 let document: { [k: string]: any } = {};
-                document[KEY_ATTRIBUTE_NAME] = key
-                document[VALUE_ATTRIBUTE_NAME] = valueAsString
+
+
+                if (typeof values[index] == "string") {
+                    document[KEY_ATTRIBUTE_NAME] = key
+                    document[VALUE_ATTRIBUTE_NAME] = values[index];
+                } else {
+                    // Making sure we copy the object and will not modify it
+                    document = Object.assign({}, values[index]);
+                    document[KEY_ATTRIBUTE_NAME] = key
+                }
 
                 logger.debug(`${fcnName} Setting value of ${key} from ledger ${ledgerName} and table ${tableName} as utf8 encoded stringified JSON object.`);
                 return document

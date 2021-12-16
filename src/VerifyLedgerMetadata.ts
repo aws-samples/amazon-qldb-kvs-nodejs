@@ -141,18 +141,7 @@ export async function verifyDocumentMetadataWithUserData(
 
         logger.debug(`${fcnName} Revision hash match with the ledger.`)
 
-        if (userRevisionId !== revisionId) {
-            throw new Error(`${fcnName} Revision IDs do not match. Received from user: ${userRevisionId}; Received from Ledger: ${revisionId}`)
-        }
-
-        logger.debug(`${fcnName} Revision ID match with the ledger.`)
-
-        if (valueHolderToString(userBlockAddress) !== valueHolderToString(blockAddress)) {
-            throw new Error(`${fcnName} BlockAddresses do not match. Received from user: ${valueHolderToString(userBlockAddress)}; Received from Ledger: ${valueHolderToString(blockAddress)}`)
-        }
-
-        logger.debug(`${fcnName} BlockAddress match with the ledger.`)
-        logger.debug(`${fcnName} Got back a proof: ${valueHolderToString(proof)}.`);
+        logger.debug(`${fcnName} Got back the proof: ${valueHolderToString(proof)}.`);
 
         let userRevisionHashBinary: Uint8Array = Buffer.from(userRevisionHash, 'base64');
 
@@ -164,18 +153,6 @@ export async function verifyDocumentMetadataWithUserData(
             logger.debug(`${fcnName} Success! The document is verified.`);
         }
 
-        const alteredDocumentHash: Uint8Array = flipRandomBit(userRevisionHashBinary);
-
-        logger.debug(
-            `${fcnName} Flipping one bit in the document's hash and assert that the document is NOT verified. The altered document hash is: ${toBase64(alteredDocumentHash)}`
-        );
-        const verifiedAlteredDocument = verifyDocumentMetadata(alteredDocumentHash, userDigestBase64, proof);
-
-        if (verifiedAlteredDocument) {
-            throw new Error(`Expected altered document hash to not be verified against digest.`);
-        } else {
-            logger.debug(`${fcnName} Success! As expected flipping a bit in the document hash causes verification to fail.`);
-        }
         logger.debug(`${fcnName} Finished verifying document with Id = ${userLedgerMetadata.DocumentId}, in ledger = ${ledgerName}.`);
         return verifiedDocument
     } catch (err) {

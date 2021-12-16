@@ -10,7 +10,17 @@ let constants = {
     DOC_OBJECT_KEY: "myKey25",
     DOC_OBJECT_VALUE: {
         test: "test2",
-        number: 2
+        number: 2,
+        decimalNumber: 3.3,
+        boolean: true,
+        nullValue: null,
+        JSONObject: {
+            stringProperty: "stringValue",
+            numberProperty: 38,
+            arrayProperty: [2, 4, 5, 2, {
+                inArrayObjectProp: "stringValue"
+            }]
+        }
     }
 }
 

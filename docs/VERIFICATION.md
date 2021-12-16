@@ -1,7 +1,9 @@
 # Metadata verification algorithm
 
-1. Receive the document revision and proof information from the user, containing the following:
-    ```
+The `verifyMetadata(metadata)` method of the library implements the following logic to verify the document revision metadata and the proof against the ledger:
+
+1. Through the `metadata` parameter the unctions receives document revision metadata like the following:
+    ```JSON
     {
         "LedgerName": "vehicle-registration",
         "TableName": "Shire",
@@ -21,17 +23,15 @@
         }
     }
     ```
-2. Retrieve a corresponding revision of a document with specified ID from QLDB.
-3. Check the revision hash provided by the user (a value of `RevisionHash` attribute from above) is the same with the one we have got from QLDB.
-4. Check the DocumentId provided by the user matches the Revision ID retrieved from QLDB (now I think this might be an overkill)
-5. Compare block address data provided by the user with the block address data retrieved from QLDB
+2. Retrieve document revision by `DocumentId` from the Amazon QLDB ledger.
+3. Compare revision hash from `RevisionHash` attribute of submitted metadata with the one retrieved from the ledger.
 
-By now we verified that document revision data provided by the user matches the corresponding revision metadata retrieved from QLDB. Next, we want to verify that the metadata in QLDB has not been changed as well (trust, but verify).
+By now we tested that the revision metadata passed into the function matches the corresponding revision metadata retrieved from QLDB. Next, we want to verify that we can compute digest value that will match with the `LedgerDigest` passed to the function. We will start with `RevisionHash` provided to the function and iterate through the proof (hash chain), we've got from QLDB.
 
-To do that, we need to verify that we can derive the same Ledger Digest as specified by the user from the Revision Hash specified by the user and using a hash chain, we've got for corresponding revision from QLDB:
+1. Take the `RevisionHash` and `LedgerDigest.Digest` from the input document and retrieve proof (hash chain) from QLDB.
 
-1. Take the Revision Hash and Ledger Digest provided by the user and a proof (hash chain), retrieved from QLDB. 
+2. To generate a candidate `LedgerDigest`, start with `RevisionHash` and iterate through the proof (hash chain), we've got from QLDB using the [`dot` function](https://docs.aws.amazon.com/qldb/latest/developerguide/verification.tutorial-block-hash.html#verification.tutorial.step-6).
 
-2. Generate a candidate Ledger Digest using the Revision Hash provided by the user and Proof (a hash chain), retrieved from QLDB.
+3. Compare the candidate `LedgerDigest` with the `LedgerDigest` passed into the function. If they match, that means that the document revision, the data in block, and the whole previous QLDB ledger updates have not been changed.
 
-3. Compare the candidate Ledger Digest with the Ledger Digest provided by the user. If they match, that means that the revision metadata of that document stored in QLDB has not been changed as well.
+For more information see [Tutorial: Verifying data using an AWS SDK](https://docs.aws.amazon.com/qldb/latest/developerguide/verification.tutorial-block-hash.html)

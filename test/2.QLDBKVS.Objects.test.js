@@ -74,7 +74,7 @@ describe('2.QLDBKVS.Objects.test', () => {
     }, 10000);
 
     it('Test getValues with versions', async () => {
-        const res = await qldbKVS.getValues([constants.DOC_STRING_KEY, constants.DOC_OBJECT_KEY], true);
+        const res = await qldbKVS.getValues([constants.DOC_OBJECT_KEY, constants.DOC_STRING_KEY], true);
         console.log(`[TEST LOGS]Test getValues with versions: ${JSON.stringify(res)}`)
         const resultDataArray = res.map((result) => {
             return result.data
@@ -83,6 +83,7 @@ describe('2.QLDBKVS.Objects.test', () => {
             return result.version
         })
         versionsArray = resultVersionsArray;
+        console.log(`[TEST LOGS]Test getValues corresponding versions array: ${JSON.stringify(versionsArray)}`)
         expect(resultDataArray).toEqual(expect.arrayContaining([constants.DOC_OBJECT_VALUE, constants.DOC_STRING_VALUE]))
     }, 10000);
 
