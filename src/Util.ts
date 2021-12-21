@@ -23,7 +23,8 @@ import {
     makeReader,
     Reader,
     toBase64,
-    Writer
+    Writer,
+    makeTextWriter
 } from "ion-js";
 
 import { log } from "./Logging";
@@ -199,4 +200,54 @@ export function validateStringAsISODateTime(dateTimeISO: string): boolean {
     }
 
     return true;
+}
+
+/**
+ * Convert dom.Value to writer-based Uint8Array
+ * @param domValue The Ion value tof dom.Value type.
+ * @returns Uint8Array value of the attribute. The buffer will
+ * be either a UTF-8 encoded buffer for Ion text or Ion binary.  The buffer is
+ * not well-defined until [[close]] is invoked.
+
+ */
+export function toWriterBytes(domValue: dom.Value): Uint8Array {
+    let writer = makeTextWriter();
+    domValue.writeTo(writer);
+    return writer.getBytes();
+}
+
+/**
+ * Convert metadata as JSON to UTF-8 encoded buffer for Ion to make sure all properties converted correctly
+ * @param metadataJSON The value of the QLDB-generated metadata object, converted to JSON.
+ * @returns Uint8Array value of the attribute. The buffer will
+ * be either a UTF-8 encoded buffer for Ion text or Ion binary.  The buffer is
+ * not well-defined until [[close]] is invoked.
+ */
+export function metadataJSONtoIonUint8Array(metadataJSON: any): Uint8Array {
+    let writer = makeTextWriter();
+    const jsonObject = JSON.parse(JSON.stringify(metadataJSON));
+    writer.stepIn(IonTypes.STRUCT);      // step into a struct
+    for (let key in jsonObject) {
+        if (jsonObject.hasOwnProperty(key)) {
+            writer.writeFieldName(key);
+            switch (key) {
+                case 'txTime':
+                    writer.writeTimestamp(jsonObject[key]);
+                    logger.debug(`Converting json to ion key ${key} TIMESTAMP value ${JSON.stringify(jsonObject[key])}`);
+                    break;
+                case 'version':
+                    writer.writeInt(jsonObject[key]);
+                    logger.debug(`Converting json to ion key ${key} INT value ${JSON.stringify(jsonObject[key])}`);
+                    break;
+                default:
+                    logger.debug(`Converting json to ion key ${key} value ${JSON.stringify(jsonObject[key])}`);
+                    writer.writeString(jsonObject[key]);
+                    break;
+            }
+        }
+    }
+
+    writer.stepOut();                    // step out of the struct
+    writer.close();                      // close the writer
+    return writer.getBytes();
 }

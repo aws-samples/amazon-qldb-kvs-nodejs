@@ -652,6 +652,7 @@ export class QLDBKVS {
                 qldbClient)
             const ionReader = makeReader(revisionResponse.Revision.IonText);
             return load(ionReader);
+            //return revisionResponse.Revision.IonText;
         } catch (err) {
             const msg = `Could not get document revision`;
             logger.error(`${fcnName} ${msg}: ${err}`);

@@ -100,18 +100,25 @@ describe('4.QLDBKVS.Verify.test', () => {
         const res = await qldbKVS.getDocumentRevisionByLedgerMetadata(ledgerMetadata);
         console.log(`[TEST LOGS]Test getDocumentRevisionByLedgerMetadata: ${JSON.stringify(res)}`)
         expect(res).toBeTruthy();
-        // Making sure we convert ledgerMetadata from text
-        documentRevision = JSON.parse(JSON.stringify(res));
     }, 8000);
 
     it('Test verifyDocumentRevisionHash', async () => {
+        const ledgerMetadata = await qldbKVS.getMetadata(constants.DOC_OBJECT_KEY);
+        const resRevision = await qldbKVS.getDocumentRevisionByLedgerMetadata(ledgerMetadata);
+        console.log(`[TEST LOGS]Test getDocumentRevisionByLedgerMetadata: ${JSON.stringify(resRevision)}`)
+        documentRevision = JSON.parse(JSON.stringify(resRevision));
+
         const res = qldbKVS.verifyDocumentRevisionHash(documentRevision);
         console.log(`[TEST LOGS]Test verifyDocumentRevisionHash: ${JSON.stringify(res)}`)
         expect(res).toBeTruthy();
     }, 8000);
 
     it('Test verifyDocumentRevisionHash fails if revision has been changed', async () => {
-        documentRevision.data._val = "EvilValue";
+        const ledgerMetadata = await qldbKVS.getMetadata(constants.DOC_OBJECT_KEY);
+        const resRevision = await qldbKVS.getDocumentRevisionByLedgerMetadata(ledgerMetadata);
+        documentRevision = JSON.parse(JSON.stringify(resRevision));
+
+        documentRevision.data._v = "EvilValue";
         const res = qldbKVS.verifyDocumentRevisionHash(documentRevision);
         console.log(`[TEST LOGS]Test verifyDocumentRevisionHash: ${JSON.stringify(res)}`)
         expect(res).toBeFalsy();

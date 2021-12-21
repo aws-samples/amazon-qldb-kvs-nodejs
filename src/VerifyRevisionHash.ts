@@ -1,8 +1,9 @@
 import { makeHashReader, cryptoHasherProvider } from 'ion-hash-js';
-import { makeTextWriter, makeReader, IonTypes } from 'ion-js';
+import { makeTextWriter, makeReader, IonTypes, load, Writer, dumpBinary } from 'ion-js';
 import { createHash } from "crypto";
 
 import { log } from "./Logging";
+import { toWriterBytes, metadataJSONtoIonUint8Array } from "./Util"
 const logger = log.getLogger("qldb-helper");
 
 const HASH_LENGTH = 32;
@@ -71,34 +72,9 @@ function concatenate(...arrays: Uint8Array[]) {
     return result;
 }
 
-function generateIonHash(json: any): Uint8Array {
-    let writer = makeTextWriter();
-    const jsonObject = JSON.parse(JSON.stringify(json));
-    writer.stepIn(IonTypes.STRUCT);      // step into a struct
-    for (let key in jsonObject) {
-        if (jsonObject.hasOwnProperty(key)) {
-            writer.writeFieldName(key);
-            switch (key) {
-                case 'txTime':
-                    writer.writeTimestamp(jsonObject[key]);
-                    break;
-                case 'version':
-                    writer.writeInt(jsonObject[key]);
-                    break;
-                default:
-                    logger.debug(`Converting json to ion key ${key} value ${JSON.stringify(jsonObject[key])}`);
-                    writer.writeString(jsonObject[key]);
-                    break;
-            }
-        }
-    }
-
-    writer.stepOut();                    // step out of the struct
-    writer.close();                      // close the writer
-    const ionDoc = writer.getBytes();
-
+function generateIonHash(ionDocBuffer: Uint8Array): Uint8Array {
     let hashReader = makeHashReader(
-        makeReader(ionDoc),
+        makeReader(ionDocBuffer),
         cryptoHasherProvider('sha256'));
     while (hashReader.next() != null) {
     }
@@ -106,14 +82,16 @@ function generateIonHash(json: any): Uint8Array {
     return hashReader.digest();
 }
 
-export function validateRevisionHash(revision: any): boolean {
-    const metadata = revision.metadata;
-    const data = revision.data;
-    const hash = revision.hash;
+export function validateRevisionHash(revisionAsJSON: any): boolean {
+    const fcnName = "[validateRevisionHash]"
+
+    const metadata = metadataJSONtoIonUint8Array(revisionAsJSON.metadata);
+    const data = dumpBinary(revisionAsJSON.data);
+    const hash = revisionAsJSON.hash;
 
     const metadataDigest = generateIonHash(metadata);
     const dataDigest = generateIonHash(data);
     const candidateHash = joinHashesPairwise(dataDigest, metadataDigest).toString('base64')
-    logger.debug(`Candidate hash generated: ${candidateHash} comparing with ${hash}`);
+    logger.debug(`${fcnName} Candidate hash generated: ${candidateHash} comparing with ${hash}`);
     return candidateHash === hash
 }
