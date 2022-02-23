@@ -73,7 +73,7 @@ function concatenate(...arrays: Uint8Array[]) {
 }
 
 function generateIonHash(ionDocBuffer: Uint8Array): Uint8Array {
-    let hashReader = makeHashReader(
+    const hashReader = makeHashReader(
         makeReader(ionDocBuffer),
         cryptoHasherProvider('sha256'));
     while (hashReader.next() != null) {

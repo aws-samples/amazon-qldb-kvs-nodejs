@@ -143,7 +143,7 @@ export async function verifyDocumentMetadataWithUserData(
 
         logger.debug(`${fcnName} Got back the proof: ${valueHolderToString(proof)}.`);
 
-        let userRevisionHashBinary: Uint8Array = Buffer.from(userRevisionHash, 'base64');
+        const userRevisionHashBinary: Uint8Array = Buffer.from(userRevisionHash, 'base64');
 
         const verifiedDocument: boolean = verifyDocumentMetadata(userRevisionHashBinary, userDigestBase64, proof);
 

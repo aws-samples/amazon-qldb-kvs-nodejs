@@ -219,7 +219,7 @@ export class QLDBKVS {
             }
             logger.debug(`${fcnName} Start uploading file ${filePath} to ledger ${ledgerName} and table ${tableName} under the key ${paramId}`);
 
-            let doc: { [k: string]: any } = {};
+            const doc: { [k: string]: any } = {};
             doc[KEY_ATTRIBUTE_NAME] = key;
             const fileBuffer = await readFile(filePath);
             doc[VALUE_ATTRIBUTE_NAME] = fileBuffer.toString("base64");
@@ -323,7 +323,7 @@ export class QLDBKVS {
                 throw `Requested documents do not exist`;
             }
 
-            let returnObjects = new Array(result.length);
+            const returnObjects = new Array(result.length);
 
             for (let index = 0; index < result.length; index++) {
                 const resultData = result[index].data;

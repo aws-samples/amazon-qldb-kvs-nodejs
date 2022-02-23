@@ -187,7 +187,7 @@ export async function getDocumentIdsAndVersions(
     validateTableNameConstrains(tableName);
     validateAttributeNameConstrains(keyAttributeName);
     const query = `SELECT metadata.id, metadata.version FROM _ql_committed_${tableName} AS t BY id WHERE t.data.${keyAttributeName} = ?`;
-    let documentIds: GetDocIdAndVersionResult[] = [];
+    const documentIds: GetDocIdAndVersionResult[] = [];
 
     try {
         const result: Result = await txn.execute(query, keyAttributeValue);
@@ -197,8 +197,8 @@ export async function getDocumentIdsAndVersions(
         }
 
         resultList.forEach(async (result, index) => {
-            let id: string = resultList[index].get("id").stringValue();
-            let version: number = resultList[index].get("version").numberValue();
+            const id: string = resultList[index].get("id").stringValue();
+            const version: number = resultList[index].get("version").numberValue();
             documentIds.push({
                 id: id,
                 version: version

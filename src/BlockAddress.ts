@@ -38,13 +38,13 @@ export class BlockAddress {
 export function blockAddressToValueHolder(value: dom.Value): ValueHolder {
     const fcnName = "[BlockAddress blockAddressToValueHolder]"
     try {
-        let blockAddressValue: dom.Value = getBlockAddressValue(value);
+        const blockAddressValue: dom.Value = getBlockAddressValue(value);
         const strandId: string = getStrandId(blockAddressValue);
         const sequenceNo: number = getSequenceNo(blockAddressValue);
         const valueHolder = `{strandId: "${strandId}", sequenceNo: ${sequenceNo}}`;
         return { IonText: valueHolder };
     } catch (err) {
-        logger.debug(`${fcnName} ${err.stack} `)
+        logger.debug(`${fcnName} ${err} `)
         throw `${fcnName} ${err} `
     }
 

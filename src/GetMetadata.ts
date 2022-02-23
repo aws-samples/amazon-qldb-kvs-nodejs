@@ -57,7 +57,6 @@ export async function lookupBlockAddressAndDocIdForKey(txn: TransactionExecutor,
     const fcnName = "[GetMetadata lookupBlockAddressAndDocIdForKey]"
     try {
         logger.debug(`${fcnName} Querying the '${tableName}' table for key ${keyAttributeName}: ${keyAttributeValue}...`);
-        let resultList: dom.Value[];
 
         validateTableNameConstrains(tableName);
         validateAttributeNameConstrains(keyAttributeName);
@@ -65,7 +64,7 @@ export async function lookupBlockAddressAndDocIdForKey(txn: TransactionExecutor,
         logger.debug(`${fcnName} Constructed query: ${query}`);
 
         const result: Result = await txn.execute(query, keyAttributeValue)
-        resultList = result.getResultList();
+        const resultList: dom.Value[] = result.getResultList();
         return resultList;
     } catch (err) {
         logger.debug(`${fcnName} ${err} `)

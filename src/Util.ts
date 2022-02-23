@@ -211,7 +211,7 @@ export function validateStringAsISODateTime(dateTimeISO: string): boolean {
 
  */
 export function toWriterBytes(domValue: dom.Value): Uint8Array {
-    let writer = makeTextWriter();
+    const writer = makeTextWriter();
     domValue.writeTo(writer);
     return writer.getBytes();
 }
@@ -224,10 +224,10 @@ export function toWriterBytes(domValue: dom.Value): Uint8Array {
  * not well-defined until [[close]] is invoked.
  */
 export function metadataJSONtoIonUint8Array(metadataJSON: any): Uint8Array {
-    let writer = makeTextWriter();
+    const writer = makeTextWriter();
     const jsonObject = JSON.parse(JSON.stringify(metadataJSON));
     writer.stepIn(IonTypes.STRUCT);      // step into a struct
-    for (let key in jsonObject) {
+    for (const key in jsonObject) {
         if (jsonObject.hasOwnProperty(key)) {
             writer.writeFieldName(key);
             switch (key) {
