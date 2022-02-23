@@ -6,7 +6,7 @@
     "ion-js": "^4.0.0",
     "ion-hash-js": "^2.0.0",
     "jsbi": "^3.1.1",
-    "log4js": "^3.0.6"
+    "log4js": "^6.4.0"
   },
   "name": "amazon-qldb-kvs-nodejs",
   "description": "A helper module, simplifying basic interactions with Amazon Quantum Ledger Database for Node.js through a simple key-value store interface.",
