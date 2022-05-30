@@ -95,8 +95,8 @@ const DOC_OBJECT_VALUE2 = {
             console.log(`Metadata for key "${DOC_OBJECT_KEY1}" not found.`);
         }
 
-        // Verify metadata for stored document by it's metadata
-        const isValid = await qldbKVS.verifyMetadata(metadata);
+        // Verify metadata for stored document against the ledger digest. This is similar to "Verification" section in QLDB console.
+        const isValid = await qldbKVS.verifyLedgerMetadata(metadata);
         if (isValid) {
             console.log(`Metadata for document with Key "${DOC_OBJECT_KEY1}" is valid.`);
         } else {
@@ -120,7 +120,7 @@ const DOC_OBJECT_VALUE2 = {
         }
 
         // Verifying document revision hash for full document revision. You may use it in combination with "verifyMetadata" function to check integrity of data from the level of the document all the way to the LedgerDigest
-        const isValid = await qldbKVS.verifyDocumentRevisionHash(documentRevision);
+        const isValid = await qldbKVS.verifyDocumentRevisionHash(JSON.parse(JSON.stringify(documentRevision)));
         if (isValid) {
             console.log(`Document revision hash is valid`);
         } else {
