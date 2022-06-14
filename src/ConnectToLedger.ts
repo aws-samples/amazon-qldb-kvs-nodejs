@@ -34,11 +34,11 @@ const logger = log.getLogger("qldb-helper");
  */
 export function createQldbDriver(
     ledgerName: string,
-    serviceConfigurationOptions: ClientConfiguration = {}
+    serviceConfigurationOptions: ClientConfiguration = {},
+    maxConcurrentTransactions: number = 5,
 ): QldbDriver {
     const fcnName = '[createQldbDriver]';
 
-    const maxConcurrentTransactions: number = Number(process.env.QLDB_MAX_CONCURRENT_TX) || 5;
     logger.debug(`${fcnName} maxConcurrentTransactions: ${maxConcurrentTransactions}`);
 
     return new QldbDriver(ledgerName, serviceConfigurationOptions, maxConcurrentTransactions);
