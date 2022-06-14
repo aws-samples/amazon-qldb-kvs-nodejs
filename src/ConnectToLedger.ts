@@ -26,11 +26,20 @@ const logger = log.getLogger("qldb-helper");
  * Create a pooled driver for creating sessions.
  * @param ledgerName The name of the ledger to create the driver on.
  * @param serviceConfigurationOptions The configurations for the AWS SDK client that the driver uses.
+ * @param maxConcurrentTransactions The driver internally uses a pool of sessions to execute the transactions.
+ *                                  The maxConcurrentTransactions parameter specifies the number of sessions that the driver can hold in the pool.
+ *                                  The default is set to maximum number of sockets specified in the globalAgent.
+ *                                  See {@link https://docs.aws.amazon.com/qldb/latest/developerguide/driver.best-practices.html#driver.best-practices.configuring} for more details.
  * @returns The pooled driver for creating sessions.
  */
 export function createQldbDriver(
     ledgerName: string,
     serviceConfigurationOptions: ClientConfiguration = {}
 ): QldbDriver {
-    return new QldbDriver(ledgerName, serviceConfigurationOptions);
+    const fcnName = '[createQldbDriver]';
+
+    const maxConcurrentTransactions: number = Number(process.env.QLDB_MAX_CONCURRENT_TX) || 5;
+    logger.debug(`${fcnName} maxConcurrentTransactions: ${maxConcurrentTransactions}`);
+
+    return new QldbDriver(ledgerName, serviceConfigurationOptions, maxConcurrentTransactions);
 }

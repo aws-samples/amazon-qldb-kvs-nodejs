@@ -10,7 +10,7 @@
   },
   "name": "amazon-qldb-kvs-nodejs",
   "description": "A helper module, simplifying basic interactions with Amazon Quantum Ledger Database for Node.js through a simple key-value store interface.",
-  "version": "0.7.3",
+  "version": "0.7.4",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "devDependencies": {
