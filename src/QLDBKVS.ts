@@ -54,9 +54,11 @@ export class QLDBKVS {
      * @param ledgerName A name of QLDB ledger to use
      * @param tableName A name of QLDB table
      * @param checkForTable A boolean value to check table if table exists and create if it is not exests (dafault=true)
+     * @param maxConcurrentTransactions The driver internally uses a pool of sessions to execute the transactions.
+     *                                  The maxConcurrentTransactions parameter specifies the number of sessions that the driver can hold in the pool.
      * @returns {QLDBKVS} initialized
      */
-    constructor(ledgerName: string, tableName: string, checkForTable?: boolean) {
+    constructor(ledgerName: string, tableName: string, checkForTable?: boolean, maxConcurrentTransactions: number = 5) {
         const fcnName = "[QLDBKVS.constructor]";
         try {
             if (!ledgerName) {
@@ -77,7 +79,7 @@ export class QLDBKVS {
 
             logger.debug(`${fcnName} Creating QLDB driver`);
 
-            this.qldbDriver = createQldbDriver(ledgerName);
+            this.qldbDriver = createQldbDriver(ledgerName, {}, maxConcurrentTransactions);
 
             logger.debug(`${fcnName} QLDB driver created`);
 
