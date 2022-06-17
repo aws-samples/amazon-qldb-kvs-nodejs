@@ -44,13 +44,13 @@ describe('1.QLDBKVS.Object.test', () => {
     it('Test getValue String', async () => {
         const res = await qldbKVS.getValue(constants.DOC_STRING_KEY);
         console.log(`[TEST LOGS]Test getValue: ${JSON.stringify(res)}`)
-        expect(res).toEqual(constants.DOC_STRING_VALUE)
+        expect(res.data).toEqual(constants.DOC_STRING_VALUE)
     }, 10000);
 
     it('Test getValue Object', async () => {
         const res = await qldbKVS.getValue(constants.DOC_OBJECT_KEY);
         console.log(`[TEST LOGS]Test getValue: ${JSON.stringify(res)}`)
-        expect(res).toEqual(constants.DOC_OBJECT_VALUE)
+        expect(res.data).toEqual(constants.DOC_OBJECT_VALUE)
     }, 10000);
 
     it('Test catching rejection from getValue for non-existing Object', async () => {

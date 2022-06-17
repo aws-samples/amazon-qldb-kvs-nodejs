@@ -69,8 +69,9 @@ export async function upsert(txn: TransactionExecutor, tableName: string, keyAtt
         if (docIdsAndVersions.length == 1) {
             logger.debug(`${fcnName} Document exists, updating.`);
             const documentId: string = docIdsAndVersions[0].id;
-            const documentVersion: number = docIdsAndVersions[0].version;
-            if (version && (version !== documentVersion)) {
+            const documentVersion: number = docIdsAndVersions[0].version;            
+            // Number with value 0 is falsy, so need to check whether it is defined
+            if (Number.isFinite(version) && (version !== documentVersion)) {
                 throw new Error(`Expected version number ${version} does not equal ${documentVersion} the latest version number in the ledger `);
             }
             // Just to be 100% sure we are updating a right document in deterministic way
