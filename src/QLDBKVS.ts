@@ -349,14 +349,16 @@ export class QLDBKVS {
 
                 }
 
-                if (withVersionNumbers) {
-                    returnObjects[index] = {
-                        data: returnValue,
-                        version: valueVersion
-                    }
-                } else {
-                    returnObjects[index] = returnValue
+                returnObjects[index] = {
+                    // Result order is non-deterministic, hence key is returned
+                    key: resultData.get(KEY_ATTRIBUTE_NAME).stringValue(),
+                    data: returnValue,
                 }
+
+                if (withVersionNumbers) {
+                    returnObjects[index].version = valueVersion;
+                }
+
                 if (index === result.length - 1) {
                     return returnObjects;
                 }

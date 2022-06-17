@@ -64,13 +64,19 @@ describe('2.QLDBKVS.Objects.test', () => {
     it('Test getValues', async () => {
         const res = await qldbKVS.getValues([constants.DOC_STRING_KEY, constants.DOC_OBJECT_KEY]);
         console.log(`[TEST LOGS]Test getValues: ${JSON.stringify(res)}`)
-        expect(res).toEqual(expect.arrayContaining([constants.DOC_OBJECT_VALUE, constants.DOC_STRING_VALUE]))
+        const resultDataArray = res.map((result) => {
+            return result.data
+        })
+        expect(resultDataArray).toEqual(expect.arrayContaining([constants.DOC_OBJECT_VALUE, constants.DOC_STRING_VALUE]))
     }, 10000);
 
     it('Test getValues one value does not exist', async () => {
         const res = await qldbKVS.getValues([constants.DOC_STRING_KEY, "noKey"]);
         console.log(`[TEST LOGS]Test getValues: ${JSON.stringify(res)}`)
-        expect(res).toEqual([constants.DOC_STRING_VALUE])
+        const resultDataArray = res.map((result) => {
+            return result.data
+        })
+        expect(resultDataArray).toEqual([constants.DOC_STRING_VALUE])
     }, 10000);
 
     it('Test getValues with versions', async () => {
@@ -102,7 +108,19 @@ describe('2.QLDBKVS.Objects.test', () => {
     }, 20000);
 
     it('Test setValues Object and String with correct versions', async () => {
-        const res = await qldbKVS.setValues([constants.DOC_OBJECT_KEY, constants.DOC_STRING_KEY], [constants.DOC_OBJECT_VALUE, constants.DOC_STRING_VALUE], versionsArray);
+
+        const getValuesWithVersionRes = await qldbKVS.getValues([constants.DOC_OBJECT_KEY, constants.DOC_STRING_KEY], true);
+        const resultVersionsArray = getValuesWithVersionRes.map((result) => {
+            return result.version
+        });
+        const resultKeysArray = getValuesWithVersionRes.map((result) => {
+            return result.key
+        })
+        const resultDataArray = getValuesWithVersionRes.map((result) => {
+            return result.data
+        });
+
+        const res = await qldbKVS.setValues(resultKeysArray, resultDataArray, resultVersionsArray);
         console.log(`[TEST LOGS]Test setValues Object and String with correct versions: ${JSON.stringify(res)}`)
         expect(res).toBeTruthy();
     }, 20000);
