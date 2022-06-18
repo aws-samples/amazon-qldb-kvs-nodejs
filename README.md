@@ -1,26 +1,27 @@
 # Amazon QLDB KVS for NodeJS
 
-A simple Key-Value store interface library for Amazon Quantum Ledger Database (QLDB) service with extra functions for document verification. 
+A simple Key-Value store interface library for Amazon Quantum Ledger Database (QLDB) service with extra functions for document verification.
 
-### Key features
+## Key features
+
 1. Uploading/downloading strings, numbers, JSON objects and binary files with a simple key-value store interface.
 2. Requesting document metadata by its key for storing outside of the ledger and use later for verification against the ledger.
 3. Submitting document metadata to verify against the ledger.
 4. Retrieving historical records for the document by its key.
 
-### Pre-requisites
+## Pre-requisites
 
 1. Make sure you are using NodeJS version 10 and above.
 2. Configure your [AWS NodeJS SDK](https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/configuring-the-jssdk.html)
 3. For making changes to the library and testing please also install [TypeScript](https://www.typescriptlang.org/index.html#download-links).
 
-### Installation
+## Installation
 
 ```bash
 npm install --save amazon-qldb-kvs-nodejs
 ```
 
-### Usage
+## Usage
 
 ``` Javascript
 const QLDBKVS = require("amazon-qldb-kvs-nodejs").QLDBKVS;
@@ -133,26 +134,26 @@ const DOC_OBJECT_VALUE2 = {
 })();
 ```
 
-### Running unit tests
+## Running unit tests
+
 ```bash
 npm install
 npm run test
 ```
 
-### Building full documentation
+## Building full documentation
 
 ```bash
 npm install
 npm run doc
 ```
 
-### Implementation details
+## Implementation details
 
 1. If the value is a JSON document, the library will convert to Amazon Ion format and add an indexed filed `_k` to hold the key.
 2. For Sting and File (binary) values, in addition to indexed filed `_k` the library will add an extra filed `_v` to hold the value. This field is not indexed, which means that queries can be performed only based on `_k` attribute and can not access any attributes of the stored value.
 3. Files, uploaded with `uploadAsFile` method, are converted to base64 format and stored as a string. Maximum file size in this case is around 88 Kb. For larger files it is better to use an object storage service like Amazon S3 with Object Lock feature.
 4. Since Amazon Ion is richer in types than JSON, automatic conversion will convert between the following types:
-
 
 | JSON Type Name | Amazon Ion Type Name|
 |-|-|
@@ -164,5 +165,6 @@ npm run doc
 | Object | struct |
 | Array | list |
 
-### Verification algorithm
+## Verification algorithm
+
 For the details on how verification algorithm works, please see this document: [VERIFICATION.md](./docs/VERIFICATION.md)
