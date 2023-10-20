@@ -15,7 +15,8 @@
  */
 
 import { QldbDriver } from "amazon-qldb-driver-nodejs";
-import { ClientConfiguration } from "aws-sdk/clients/qldbsession";
+import { QLDBSessionClientConfig } from "@aws-sdk/client-qldb-session";
+import { NodeHttpHandlerOptions } from "@aws-sdk/node-http-handler";
 import { log } from "./Logging";
 const logger = log.getLogger("qldb-helper");
 
@@ -32,14 +33,16 @@ const logger = log.getLogger("qldb-helper");
  *                                  See {@link https://docs.aws.amazon.com/qldb/latest/developerguide/driver.best-practices.html#driver.best-practices.configuring} for more details.
  * @returns The pooled driver for creating sessions.
  */
+const nodeHttpHandlerOptions: NodeHttpHandlerOptions = {};
+
 export function createQldbDriver(
     ledgerName: string,
-    serviceConfigurationOptions: ClientConfiguration = {},
+    serviceConfigurationOptions: QLDBSessionClientConfig = {},
     maxConcurrentTransactions: number = 5,
 ): QldbDriver {
     const fcnName = '[createQldbDriver]';
 
     logger.debug(`${fcnName} maxConcurrentTransactions: ${maxConcurrentTransactions}`);
 
-    return new QldbDriver(ledgerName, serviceConfigurationOptions, maxConcurrentTransactions);
+    return new QldbDriver(ledgerName, serviceConfigurationOptions, nodeHttpHandlerOptions, maxConcurrentTransactions);
 }

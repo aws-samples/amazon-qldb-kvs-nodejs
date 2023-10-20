@@ -15,15 +15,14 @@
  */
 
 import { Result, TransactionExecutor } from "amazon-qldb-driver-nodejs";
-import { QLDB } from "aws-sdk";
-import { GetRevisionResponse, ValueHolder } from "aws-sdk/clients/qldb";
+import { GetRevisionCommandOutput, QLDB, ValueHolder } from "@aws-sdk/client-qldb";
 import { dom, toBase64 } from "ion-js";
 
 import { getLedgerDigest } from './GetDigest';
 import { blockAddressToValueHolder, getMetadataId } from './BlockAddress';
 import { log } from "./Logging";
 const logger = log.getLogger("qldb-helper");
-import { getBlobValue, valueHolderToString, Base64EncodedString, sleep, validateTableNameConstrains, validateAttributeNameConstrains } from "./Util";
+import { getBlobValue, valueHolderToString, Digest, Base64EncodedString, sleep, validateTableNameConstrains, validateAttributeNameConstrains } from "./Util";
 import { getRevision, getRevisionMetadataByDocIdAndTxId } from "./GetRevision";
 
 export interface LedgerMetadata {
@@ -150,7 +149,7 @@ export async function getDocumentLedgerMetadata(
             digestTipAddress: digestTipAddress
         })}`);
 
-        const revisionResponse: GetRevisionResponse = await getRevision(
+        const revisionResponse: GetRevisionCommandOutput = await getRevision(
             ledgerName,
             documentId,
             blockAddress,
@@ -250,7 +249,7 @@ export async function getDocumentLedgerMetadataByDocIdAndTxId(
             digestTipAddress: digestTipAddress
         })}`);
 
-        const revisionResponse: GetRevisionResponse = await getRevision(
+        const revisionResponse: GetRevisionCommandOutput = await getRevision(
             ledgerName,
             documentId,
             blockAddress,

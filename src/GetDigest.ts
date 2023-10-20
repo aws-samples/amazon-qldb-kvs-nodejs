@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-import { QLDB } from "aws-sdk";
-import { GetDigestRequest, GetDigestResponse } from "aws-sdk/clients/qldb";
+
+
+import { GetDigestCommandInput, GetDigestCommandOutput, QLDB } from "@aws-sdk/client-qldb";
 
 /**
  * Get the digest of a ledger's journal.
@@ -23,9 +24,9 @@ import { GetDigestRequest, GetDigestResponse } from "aws-sdk/clients/qldb";
  * @param qldbClient The QLDB control plane client to use.
  * @returns Promise which fulfills with a GetDigestResponse.
  */
-export async function getLedgerDigest(ledgerName: string, qldbClient: QLDB): Promise<GetDigestResponse> {
-    const request: GetDigestRequest = {
+export async function getLedgerDigest(ledgerName: string, qldbClient: QLDB): Promise<GetDigestCommandOutput> {
+    const request: GetDigestCommandInput = {
         Name: ledgerName
     };
-    return qldbClient.getDigest(request).promise();
+    return qldbClient.getDigest(request);
 }

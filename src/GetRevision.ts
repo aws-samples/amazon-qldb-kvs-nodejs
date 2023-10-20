@@ -15,8 +15,7 @@
  */
 
 import { Result, TransactionExecutor } from "amazon-qldb-driver-nodejs";
-import { QLDB } from "aws-sdk";
-import { GetRevisionRequest, GetRevisionResponse, ValueHolder } from "aws-sdk/clients/qldb";
+import { GetRevisionCommandInput, GetRevisionCommandOutput, QLDB, ValueHolder } from "@aws-sdk/client-qldb";
 import { Base64EncodedString, validateTableNameConstrains } from "./Util";
 import { dom } from "ion-js";
 
@@ -39,16 +38,16 @@ export async function getRevision(
     blockAddress: ValueHolder,
     digestTipAddress: ValueHolder,
     qldbClient: QLDB
-): Promise<GetRevisionResponse> {
+): Promise<GetRevisionCommandOutput> {
     const fcnName = "[GetRevision getRevision]"
     try {
-        const request: GetRevisionRequest = {
+        const request: GetRevisionCommandInput = {
             Name: ledgerName,
             BlockAddress: blockAddress,
             DocumentId: documentId,
             DigestTipAddress: digestTipAddress
         };
-        return await qldbClient.getRevision(request).promise();
+        return await qldbClient.getRevision(request);
     } catch (err) {
         throw `${fcnName} ${err} `
     }

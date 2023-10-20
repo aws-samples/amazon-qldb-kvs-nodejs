@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { ValueHolder } from "aws-sdk/clients/qldb";
+import { ValueHolder } from "@aws-sdk/client-qldb";
 import { createHash } from "crypto";
 import { dom, toBase64 } from "ion-js";
 import { log } from "./Logging";

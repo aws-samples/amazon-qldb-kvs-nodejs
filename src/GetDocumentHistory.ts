@@ -19,7 +19,7 @@ import { validateTableNameConstrains, validateStringAsISODateTime } from "./Util
 import { getDocumentIdsAndVersions } from "./GetDocument";
 import { dom } from "ion-js";
 import { log } from "./Logging";
-import { ValueHolder } from "aws-sdk/clients/qldbsession";
+import { ValueHolder } from "@aws-sdk/client-qldb-session";
 const logger = log.getLogger("qldb-helper");
 
 /**

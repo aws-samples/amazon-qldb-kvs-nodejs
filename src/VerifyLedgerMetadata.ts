@@ -15,14 +15,20 @@
  */
 
 import { TransactionExecutor } from "amazon-qldb-driver-nodejs";
-import { QLDB } from "aws-sdk";
-import { Digest, GetDigestResponse, GetRevisionResponse, ValueHolder } from "aws-sdk/clients/qldb";
+
+import {
+    GetDigestCommandOutput,
+    GetRevisionCommandOutput,
+    QLDB,
+    ValueHolder,
+} from "@aws-sdk/client-qldb";
+
 import { dom, toBase64 } from "ion-js";
 
 import { blockAddressToValueHolder } from './BlockAddress';
 import { log } from "./Logging";
 const logger = log.getLogger("qldb-helper");
-import { getBlobValue, valueHolderToString, Base64EncodedString } from "./Util";
+import { Digest, getBlobValue, valueHolderToString, Base64EncodedString } from "./Util";
 import { flipRandomBit, verifyDocumentMetadata } from "./Verifier";
 import { getDocumentLedgerMetadata, LedgerMetadata } from "./GetMetadata";
 import { getRevision } from "./GetRevision"
@@ -50,14 +56,13 @@ export async function verifyDocumentMetadataWithLedgerData(
 
     const result = await getDocumentLedgerMetadata(txn, ledgerName, tableName, keyAttributeName, keyAttributeValue, qldbClient);
 
-    const digest: GetDigestResponse = result.LedgerDigest;
-    const digestBytes: Digest = digest.Digest;
-    const digestTipAddress: ValueHolder = digest.DigestTipAddress;
+    const digestBase64: Digest = result.LedgerDigest.Digest;
+    const digestTipAddress: ValueHolder = result.LedgerDigest.DigestTipAddress;
 
     const blockAddress: ValueHolder = result.BlockAddress;
     const documentId: string = result.DocumentId;
 
-    const revisionResponse: GetRevisionResponse = await getRevision(
+    const revisionResponse: GetRevisionCommandOutput = await getRevision(
         ledgerName,
         documentId,
         blockAddress,
@@ -69,8 +74,6 @@ export async function verifyDocumentMetadataWithLedgerData(
     const documentHash: Uint8Array = getBlobValue(revision, "hash");
     const proof: ValueHolder = revisionResponse.Proof;
     logger.debug(`Got back a proof: ${valueHolderToString(proof)}.`);
-
-    const digestBase64: Base64EncodedString = toBase64(<Uint8Array>digestBytes);
 
     let verified: boolean = verifyDocumentMetadata(documentHash, digestBase64, proof);
 
@@ -119,7 +122,7 @@ export async function verifyDocumentMetadataWithUserData(
         //const userProof: ValueHolder = userLedgerMetadata.Proof;
         const userDigestBase64: Base64EncodedString = userLedgerMetadata.LedgerDigest.Digest;
 
-        const revisionResponse: GetRevisionResponse = await getRevision(
+        const revisionResponse: GetRevisionCommandOutput = await getRevision(
             ledgerName,
             userLedgerMetadata.DocumentId,
             userLedgerMetadata.BlockAddress,

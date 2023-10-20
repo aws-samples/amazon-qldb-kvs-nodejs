@@ -14,16 +14,23 @@
  * limitations under the License.
  */
 
-import { QLDB } from "aws-sdk";
-import { Digest, GetBlockRequest, GetBlockResponse, GetDigestResponse, ValueHolder } from "aws-sdk/clients/qldb";
+
+
+import {
+    GetBlockCommandInput,
+    GetBlockCommandOutput,
+    GetDigestCommandOutput,
+    QLDB,
+    ValueHolder,
+} from "@aws-sdk/client-qldb";
+
 import { toBase64 } from "ion-js";
 
 import { getLedgerDigest } from './GetDigest';
 import { log } from "./Logging";
 const logger = log.getLogger("qldb-helper");
-import { blockResponseToString, valueHolderToString } from "./Util";
+import { blockResponseToString, valueHolderToString, Base64EncodedString } from "./Util";
 import { flipRandomBit, parseBlock, verifyDocumentMetadata } from "./Verifier";
-import { Base64EncodedString } from "aws-sdk/clients/elastictranscoder";
 
 /**
  * Get the block of a ledger's journal.
@@ -32,16 +39,16 @@ import { Base64EncodedString } from "aws-sdk/clients/elastictranscoder";
  * @param qldbClient The QLDB control plane client to use.
  * @returns Promise which fulfills with a GetBlockResponse.
  */
-async function getBlock(ledgerName: string, blockAddress: ValueHolder, qldbClient: QLDB): Promise<GetBlockResponse> {
+async function getBlock(ledgerName: string, blockAddress: ValueHolder, qldbClient: QLDB): Promise<GetBlockCommandOutput> {
     logger.debug(
         `Let's get the block for block address \n${valueHolderToString(blockAddress)} \nof the ledger ` +
         `named ${ledgerName}.`
     );
-    const request: GetBlockRequest = {
+    const request: GetBlockCommandInput = {
         Name: ledgerName,
         BlockAddress: blockAddress
     };
-    const result: GetBlockResponse = await qldbClient.getBlock(request).promise();
+    const result: GetBlockCommandOutput = await qldbClient.getBlock(request);
     logger.debug(`Success. GetBlock: \n${blockResponseToString(result)}.`);
     return result;
 }
@@ -59,17 +66,17 @@ async function getBlockWithProof(
     blockAddress: ValueHolder,
     digestTipAddress: ValueHolder,
     qldbClient: QLDB
-): Promise<GetBlockResponse> {
+): Promise<GetBlockCommandOutput> {
     logger.debug(
         `Let's get the block for block address \n${valueHolderToString(blockAddress)}, \ndigest tip address:
         ${valueHolderToString(digestTipAddress)} \nof the ledger named ${ledgerName}.`
     );
-    const request: GetBlockRequest = {
+    const request: GetBlockCommandInput = {
         Name: ledgerName,
         BlockAddress: blockAddress,
         DigestTipAddress: digestTipAddress
     };
-    const result: GetBlockResponse = await qldbClient.getBlock(request).promise();
+    const result: GetBlockCommandOutput = await qldbClient.getBlock(request);
     logger.debug(`Success. GetBlock: \n${blockResponseToString(result)}.`);
     return result;
 }
@@ -86,15 +93,15 @@ export async function verifyBlock(ledgerName: string, blockAddress: ValueHolder,
     logger.debug(`Let's verify blocks for ledger with name = ${ledgerName}.`);
     try {
         logger.debug("First, let's get a digest.");
-        const digestResult: GetDigestResponse = await getLedgerDigest(ledgerName, qldbClient);
-        const digestBytes: Digest = digestResult.Digest;
+        const digestResult: GetDigestCommandOutput = await getLedgerDigest(ledgerName, qldbClient);
+        const digestBytes: Uint8Array = digestResult.Digest;
         const digestTipAddress: ValueHolder = digestResult.DigestTipAddress;
         logger.debug(
             `Got a ledger digest. Digest end address = \n${valueHolderToString(digestTipAddress)}, ` +
             `\ndigest = ${toBase64(<Uint8Array>digestBytes)}.`
         );
 
-        const getBlockResult: GetBlockResponse = await getBlockWithProof(
+        const getBlockResult: GetBlockCommandOutput = await getBlockWithProof(
             ledgerName,
             blockAddress,
             digestTipAddress,

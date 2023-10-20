@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { ValueHolder } from "aws-sdk/clients/qldb";
+import { ValueHolder } from "@aws-sdk/client-qldb";
 import { dom, IonTypes } from "ion-js";
 import { log } from "./Logging";
 const logger = log.getLogger("qldb-helper");

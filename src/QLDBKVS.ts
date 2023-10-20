@@ -15,7 +15,7 @@
  */
 
 import { QldbDriver, TransactionExecutor, Result } from "amazon-qldb-driver-nodejs";
-import { QLDB } from "aws-sdk";
+import { GetDigestCommandOutput, GetRevisionCommandOutput, QLDB } from "@aws-sdk/client-qldb";
 import { createTableWithIndex, listTables } from "./QLDBHelper";
 import { getByKeyAttribute, getByKeyAttributes, GetDocumentResult } from "./GetDocument"
 import { getLedgerDigest } from './GetDigest';
@@ -30,7 +30,6 @@ import { log } from "./Logging";
 import { createQldbDriver } from "./ConnectToLedger"
 
 import { VALUE_ATTRIBUTE_NAME, KEY_ATTRIBUTE_NAME, DEFAULT_DOWNLOADS_PATH, MAX_QLDB_DOCUMENT_SIZE, TABLE_CREATION_MAX_WAIT } from "./Constants";
-import { GetRevisionResponse } from "aws-sdk/clients/qldb";
 import { makeReader, dom, load } from "ion-js";
 
 const qldbClient: QLDB = new QLDB();
@@ -649,7 +648,7 @@ export class QLDBKVS {
 
             logger.debug(`${fcnName} Retrieving document revision by metadata ${ledgerMetadata.DocumentId} from ledger ${ledgerName}`);
 
-            const revisionResponse: GetRevisionResponse = await getRevision(ledgerName,
+            const revisionResponse: GetRevisionCommandOutput = await getRevision(ledgerName,
                 ledgerMetadata.DocumentId,
                 ledgerMetadata.BlockAddress,
                 ledgerMetadata.LedgerDigest.DigestTipAddress,
@@ -693,7 +692,7 @@ export class QLDBKVS {
      * @param ledgerName A name of the ledger
      * @throws Error: If error happen during the process.
      */
-    async getLedgerDigest(ledgerName: string, qldbClient: QLDB): Promise<QLDB.GetDigestResponse> {
+    async getLedgerDigest(ledgerName: string, qldbClient: QLDB): Promise<GetDigestCommandOutput> {
         const fcnName = "[QLDBHelper.getLedgerDigest]"
         return getLedgerDigest(ledgerName, qldbClient);
     }

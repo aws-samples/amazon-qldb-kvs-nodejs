@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { GetBlockResponse, GetDigestResponse, ValueHolder } from "aws-sdk/clients/qldb";
+import { GetBlockResponse, GetDigestResponse, ValueHolder } from "@aws-sdk/client-qldb";
 import {
     decodeUtf8,
     dom,
@@ -31,6 +31,8 @@ import { log } from "./Logging";
 const logger = log.getLogger("qldb-helper");
 
 export type Base64EncodedString = string;
+
+export type Digest = Base64EncodedString | undefined;
 
 /**
  * Returns the string representation of a given BlockResponse.
